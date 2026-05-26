@@ -11,7 +11,7 @@ const TradingViewChart = dynamic(() => import("@/components/TradingViewChart"), 
 const TradingViewTicker = dynamic(() => import("@/components/TradingViewTicker"), { ssr: false });
 const TradingViewHeatmap = dynamic(() => import("@/components/TradingViewHeatmap"), { ssr: false });
 
-type Tab = "advisory" | "mercati" | "signals" | "news" | "volumes" | "analyze";
+type Tab = "advisory" | "strategy" | "mercati" | "signals" | "news" | "volumes" | "analyze";
 
 const CATEGORIES = [
   "Top Azioni USA", "FTSE MIB", "Crypto", "ETF Settoriali",
@@ -50,6 +50,7 @@ export default function Home() {
           {(
             [
               ["advisory", "Cosa Comprare"],
+              ["strategy", "La Mia Strategia"],
               ["mercati", "Mercati & Grafici"],
               ["signals", "Tutti i Segnali"],
               ["news", "News & Sentiment"],
@@ -75,6 +76,7 @@ export default function Home() {
 
       <main className="max-w-7xl mx-auto px-4 py-6">
         {tab === "advisory" && <AdvisoryTab report={advisoryReport} setReport={setAdvisoryReport} loading={advisoryLoading} setLoading={setAdvisoryLoading} />}
+        {tab === "strategy" && <StrategyTab />}
         {tab === "mercati" && <MercatiTab />}
         {tab === "signals" && <SignalsTab data={signalsData} setData={setSignalsData} />}
         {tab === "news" && <NewsTab data={newsData} setData={setNewsData} />}
@@ -310,6 +312,234 @@ function RecSection({ title, color, recs, onSelect }: { title: string; color: st
           <RecommendationCard key={rec.ticker} rec={rec} onChartClick={() => onSelect(rec.ticker)} />
         ))}
       </div>
+    </div>
+  );
+}
+
+// === STRATEGIA ===
+function StrategyTab() {
+  const [data, setData] = useState<any>(null);
+  const [loading, setLoading] = useState(false);
+  const [selectedTicker, setSelectedTicker] = useState<string | null>(null);
+
+  const load = () => {
+    if (data && !loading) return; // già caricato
+    setLoading(true);
+    fetch("/api/strategy")
+      .then(r => r.json())
+      .then(d => { setData(d); setLoading(false); })
+      .catch(() => setLoading(false));
+  };
+
+  const statusColors: Record<string, { bg: string; text: string }> = {
+    "CONFERMATA": { bg: "rgba(34,197,94,0.15)", text: "#22c55e" },
+    "IN LINEA": { bg: "rgba(91,138,245,0.15)", text: "#5b8af5" },
+    "ATTENZIONE": { bg: "rgba(234,179,8,0.15)", text: "#eab308" },
+    "STOP LOSS": { bg: "rgba(239,68,68,0.15)", text: "#ef4444" },
+    "TARGET RAGGIUNTO": { bg: "rgba(168,85,247,0.15)", text: "#a855f7" },
+  };
+
+  return (
+    <div className="space-y-6">
+      <Card highlight>
+        <h2 className="text-2xl font-black mb-2" style={{ color: "var(--accent)" }}>La Mia Strategia di Investimento</h2>
+        <p className="text-sm mb-1" style={{ color: "#94a3b8" }}>
+          Portafoglio consigliato basato su analisi storica dei mercati. Budget: max €60-100 per operazione.
+        </p>
+        <p className="text-xs mb-4" style={{ color: "#475569" }}>
+          Strategia creata il {data?.strategyDate || "2025-05-26"} — Il sistema confronta i prezzi di allora con quelli di oggi per verificare se la strategia regge.
+        </p>
+        <button
+          onClick={load}
+          disabled={loading}
+          className="px-6 py-3 rounded-lg font-bold text-sm transition-all disabled:opacity-50 hover:brightness-110"
+          style={{ background: "var(--accent)", color: "#08091a" }}
+        >
+          {loading ? "Confronto in corso..." : data ? "Aggiorna Confronto" : "Confronta con Dati Reali"}
+        </button>
+      </Card>
+
+      {loading && (
+        <Card>
+          <div className="text-center py-8">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 mx-auto mb-4" style={{ borderColor: "var(--accent)" }} />
+            <p style={{ color: "#94a3b8" }}>Confronto strategia con prezzi reali + AI...</p>
+          </div>
+        </Card>
+      )}
+
+      {data && !loading && (
+        <>
+          {/* Stats */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <Card>
+              <p className="text-xs" style={{ color: "#94a3b8" }}>Confermate</p>
+              <p className="text-2xl font-black" style={{ color: "#22c55e" }}>{data.stats.confirmed}</p>
+            </Card>
+            <Card>
+              <p className="text-xs" style={{ color: "#94a3b8" }}>Da comprare ora</p>
+              <p className="text-2xl font-black" style={{ color: "var(--accent)" }}>{data.stats.stillBuy}</p>
+            </Card>
+            <Card>
+              <p className="text-xs" style={{ color: "#94a3b8" }}>Attenzione</p>
+              <p className="text-2xl font-black" style={{ color: "#eab308" }}>{data.stats.warnings}</p>
+            </Card>
+            <Card>
+              <p className="text-xs" style={{ color: "#94a3b8" }}>Target raggiunti</p>
+              <p className="text-2xl font-black" style={{ color: "#a855f7" }}>{data.stats.targets}</p>
+            </Card>
+          </div>
+
+          {/* AI Commentary */}
+          {data.aiCommentary && (
+            <div className="rounded-xl p-6" style={{ background: "linear-gradient(135deg, #0f1129 0%, #1a1050 50%, #0f1129 100%)", border: "1px solid var(--accent)" }}>
+              <div className="flex items-center gap-2 mb-3">
+                <div className="w-8 h-8 rounded-lg flex items-center justify-center text-sm font-black" style={{ background: "var(--accent)", color: "#08091a" }}>AI</div>
+                <h3 className="text-lg font-black" style={{ color: "var(--accent)" }}>Verdetto AI — Strategia vs Realtà</h3>
+              </div>
+              <div className="text-sm leading-relaxed whitespace-pre-line" style={{ color: "#cbd5e1" }}>
+                {data.aiCommentary}
+              </div>
+            </div>
+          )}
+
+          {/* Picks per categoria */}
+          {["ITALIA", "USA", "CRYPTO"].map(cat => {
+            const catChecks = data.checks.filter((c: any) => c.pick.category === cat);
+            if (catChecks.length === 0) return null;
+            return (
+              <div key={cat}>
+                <h3 className="text-lg font-bold mb-3" style={{ color: "var(--accent)" }}>
+                  {cat === "ITALIA" ? "Italia (FTSE MIB)" : cat === "USA" ? "USA" : "Crypto"}
+                </h3>
+                <div className="grid gap-4">
+                  {catChecks.map((check: any) => (
+                    <div key={check.pick.ticker} className="rounded-xl p-5" style={{
+                      background: "var(--surface)",
+                      border: `1px solid var(--border)`,
+                      borderLeftWidth: "4px",
+                      borderLeftColor: statusColors[check.status]?.text || "#64748b",
+                    }}>
+                      {/* Header */}
+                      <div className="flex items-center justify-between flex-wrap gap-2 mb-3">
+                        <div className="flex items-center gap-3">
+                          <h4 className="text-xl font-black" style={{ color: "var(--accent)" }}>{check.pick.ticker}</h4>
+                          <span className="text-sm" style={{ color: "#94a3b8" }}>{check.pick.name}</span>
+                          <span className="px-2 py-0.5 rounded text-xs font-bold" style={{
+                            background: statusColors[check.status]?.bg,
+                            color: statusColors[check.status]?.text,
+                          }}>
+                            {check.status}
+                          </span>
+                          {check.stillBuy && (
+                            <span className="px-2 py-0.5 rounded text-xs font-bold" style={{ background: "rgba(34,197,94,0.2)", color: "#22c55e" }}>
+                              DA COMPRARE
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="px-2 py-0.5 rounded text-xs font-bold" style={{ background: "rgba(91,138,245,0.15)", color: "#7ba4ff" }}>
+                            {check.pick.priority}
+                          </span>
+                          <button
+                            onClick={() => setSelectedTicker(check.pick.ticker)}
+                            className="px-3 py-1 rounded-lg text-xs font-bold hover:brightness-110"
+                            style={{ background: "var(--accent)", color: "#08091a" }}
+                          >
+                            Grafico
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Prezzi */}
+                      <div className="grid grid-cols-2 md:grid-cols-6 gap-3 mb-3">
+                        <div>
+                          <p className="text-xs" style={{ color: "#94a3b8" }}>Riferimento</p>
+                          <p className="font-bold">{check.pick.currency === "EUR" ? "€" : "$"}{check.pick.referencePrice}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs" style={{ color: "#94a3b8" }}>Prezzo attuale</p>
+                          <p className="font-bold" style={{ color: check.currentPrice > 0 ? "var(--foreground)" : "#ef4444" }}>
+                            {check.currentPrice > 0 ? `${check.pick.currency === "EUR" ? "€" : "$"}${check.currentPrice}` : "N/D"}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-xs" style={{ color: "#94a3b8" }}>Variazione</p>
+                          <p className="font-bold" style={{ color: check.changePct >= 0 ? "#22c55e" : "#ef4444" }}>
+                            {check.changePct >= 0 ? "+" : ""}{check.changePct}%
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-xs" style={{ color: "#94a3b8" }}>Target</p>
+                          <p className="font-bold" style={{ color: "#22c55e" }}>{check.pick.currency === "EUR" ? "€" : "$"}{check.pick.targetPrice}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs" style={{ color: "#94a3b8" }}>Stop Loss</p>
+                          <p className="font-bold" style={{ color: "#ef4444" }}>{check.pick.currency === "EUR" ? "€" : "$"}{check.pick.stopLoss}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs" style={{ color: "#94a3b8" }}>Dividendo</p>
+                          <p className="font-bold" style={{ color: check.pick.dividendYield > 3 ? "#22c55e" : "#94a3b8" }}>
+                            {check.pick.dividendYield > 0 ? `${check.pick.dividendYield}%` : "—"}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Verdetto */}
+                      <div className="rounded-lg p-3 mb-3" style={{ background: statusColors[check.status]?.bg }}>
+                        <p className="text-sm font-medium" style={{ color: statusColors[check.status]?.text }}>{check.verdict}</p>
+                      </div>
+
+                      {/* Tesi e rischi */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+                        <div className="rounded-lg p-3" style={{ background: "var(--surface-light)" }}>
+                          <span className="font-bold" style={{ color: "#22c55e" }}>Tesi: </span>
+                          <span style={{ color: "#94a3b8" }}>{check.pick.thesis}</span>
+                        </div>
+                        <div className="rounded-lg p-3" style={{ background: "var(--surface-light)" }}>
+                          <span className="font-bold" style={{ color: "#ef4444" }}>Rischi: </span>
+                          <span style={{ color: "#94a3b8" }}>{check.pick.risks}</span>
+                        </div>
+                      </div>
+
+                      {/* Consensus analisti */}
+                      {check.analystConsensus && (
+                        <p className="text-xs mt-2" style={{ color: "#60a5fa" }}>
+                          Analisti: {check.analystConsensus}
+                        </p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
+
+          {/* Grafico */}
+          {selectedTicker && (
+            <Card>
+              <div className="flex justify-between items-center mb-2">
+                <h3 className="font-bold" style={{ color: "var(--accent)" }}>Grafico: {selectedTicker}</h3>
+                <button onClick={() => setSelectedTicker(null)} className="text-sm" style={{ color: "#94a3b8" }}>Chiudi</button>
+              </div>
+              <TradingViewChart symbol={tvSymbol(selectedTicker)} height={500} />
+            </Card>
+          )}
+
+          {/* Regole */}
+          <Card>
+            <h3 className="font-bold mb-3" style={{ color: "var(--accent)" }}>Regole della Strategia</h3>
+            <div className="space-y-2">
+              {data.rules.map((rule: string, i: number) => (
+                <div key={i} className="flex items-start gap-2">
+                  <span className="text-sm font-black" style={{ color: "var(--accent)" }}>{i + 1}.</span>
+                  <p className="text-sm" style={{ color: "#cbd5e1" }}>{rule}</p>
+                </div>
+              ))}
+            </div>
+          </Card>
+        </>
+      )}
     </div>
   );
 }
