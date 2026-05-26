@@ -127,20 +127,42 @@ export function summarizeSentiment(news: NewsItem[]): SentimentSummary {
 }
 
 export async function getFearGreedIndex(): Promise<{ score: number; rating: string }> {
+  // Metodo 1: CNN API
   try {
     const res = await fetch("https://production.dataviz.cnn.io/index/fearandgreed/graphdata", {
-      headers: { "User-Agent": "Mozilla/5.0" },
+      headers: {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        "Accept": "application/json",
+        "Referer": "https://edition.cnn.com/",
+      },
       next: { revalidate: 600 },
     });
 
-    if (!res.ok) return { score: 0, rating: "N/A" };
+    if (res.ok) {
+      const data = await res.json();
+      const score = Math.round(data?.fear_and_greed?.score || 0);
+      if (score > 0) {
+        return { score, rating: data?.fear_and_greed?.rating || "N/A" };
+      }
+    }
+  } catch {}
 
-    const data = await res.json();
-    return {
-      score: Math.round(data?.fear_and_greed?.score || 0),
-      rating: data?.fear_and_greed?.rating || "N/A",
-    };
-  } catch {
-    return { score: 0, rating: "N/A" };
-  }
+  // Metodo 2: Alternative Fear & Greed API
+  try {
+    const res = await fetch("https://api.alternative.me/fng/?limit=1", {
+      next: { revalidate: 600 },
+    });
+    if (res.ok) {
+      const data = await res.json();
+      const item = data?.data?.[0];
+      if (item) {
+        return {
+          score: parseInt(item.value) || 50,
+          rating: item.value_classification || "Neutral",
+        };
+      }
+    }
+  } catch {}
+
+  return { score: 50, rating: "Neutral (fallback)" };
 }

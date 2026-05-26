@@ -33,64 +33,150 @@ export interface TechnicalSignals {
   reasons: string[];
 }
 
-const YAHOO_BASE = "https://query1.finance.yahoo.com";
+// Headers che funzionano da server cloud
+const YAHOO_HEADERS = {
+  "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+  "Accept": "application/json,text/html,application/xhtml+xml",
+  "Accept-Language": "en-US,en;q=0.9",
+  "Accept-Encoding": "gzip, deflate, br",
+  "Connection": "keep-alive",
+  "Cache-Control": "no-cache",
+};
+
+// Primo metodo: Yahoo Finance v8 chart API (più affidabile da cloud)
+async function getQuoteFromChart(ticker: string): Promise<QuoteData | null> {
+  try {
+    const url = `https://query2.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(ticker)}?range=1mo&interval=1d&includePrePost=false`;
+    const res = await fetch(url, { headers: YAHOO_HEADERS, next: { revalidate: 120 } });
+    if (!res.ok) return null;
+
+    const data = await res.json();
+    const meta = data?.chart?.result?.[0]?.meta;
+    const quotes = data?.chart?.result?.[0]?.indicators?.quote?.[0];
+    if (!meta || !quotes) return null;
+
+    const volumes = (quotes.volume || []).filter((v: number | null) => v != null);
+    const lastVol = volumes.length > 0 ? volumes[volumes.length - 1] : 0;
+    const avgVol = volumes.length > 5 ? volumes.slice(0, -1).reduce((a: number, b: number) => a + b, 0) / (volumes.length - 1) : lastVol || 1;
+
+    return {
+      ticker: meta.symbol || ticker,
+      name: meta.shortName || meta.symbol || ticker,
+      price: meta.regularMarketPrice || 0,
+      change: (meta.regularMarketPrice || 0) - (meta.previousClose || meta.chartPreviousClose || 0),
+      changePct: meta.previousClose ? ((meta.regularMarketPrice - meta.previousClose) / meta.previousClose) * 100 : 0,
+      volume: lastVol,
+      avgVolume: avgVol,
+      volRatio: avgVol > 0 ? +(lastVol / avgVol).toFixed(2) : 1,
+      high52w: meta.fiftyTwoWeekHigh || 0,
+      low52w: meta.fiftyTwoWeekLow || 0,
+      marketCap: 0,
+    };
+  } catch {
+    return null;
+  }
+}
+
+// Secondo metodo: Yahoo Finance v6 quoteSummary
+async function getQuoteFromSummary(ticker: string): Promise<QuoteData | null> {
+  try {
+    const url = `https://query2.finance.yahoo.com/v6/finance/quoteSummary/${encodeURIComponent(ticker)}?modules=price`;
+    const res = await fetch(url, { headers: YAHOO_HEADERS, next: { revalidate: 120 } });
+    if (!res.ok) return null;
+
+    const data = await res.json();
+    const price = data?.quoteSummary?.result?.[0]?.price;
+    if (!price) return null;
+
+    return {
+      ticker: price.symbol || ticker,
+      name: price.shortName || price.symbol || ticker,
+      price: price.regularMarketPrice?.raw || 0,
+      change: price.regularMarketChange?.raw || 0,
+      changePct: price.regularMarketChangePercent?.raw ? price.regularMarketChangePercent.raw * 100 : 0,
+      volume: price.regularMarketVolume?.raw || 0,
+      avgVolume: price.averageDailyVolume10Day?.raw || 1,
+      volRatio: price.averageDailyVolume10Day?.raw ? +(price.regularMarketVolume?.raw / price.averageDailyVolume10Day.raw).toFixed(2) : 1,
+      high52w: 0,
+      low52w: 0,
+      marketCap: price.marketCap?.raw || 0,
+    };
+  } catch {
+    return null;
+  }
+}
 
 export async function getQuotes(tickers: string[]): Promise<QuoteData[]> {
-  const symbols = tickers.join(",");
-  const url = `${YAHOO_BASE}/v7/finance/quote?symbols=${encodeURIComponent(symbols)}`;
+  // Prova prima il batch v7, poi fallback uno per uno con v8 chart
+  const batchResult = await getQuotesBatch(tickers);
+  if (batchResult.length > 0) return batchResult;
 
-  const res = await fetch(url, {
-    headers: { "User-Agent": "Mozilla/5.0" },
-    next: { revalidate: 60 },
-  });
+  // Fallback: uno per uno con chart API
+  const results: QuoteData[] = [];
+  for (const ticker of tickers) {
+    const quote = await getQuoteFromChart(ticker) || await getQuoteFromSummary(ticker);
+    if (quote && quote.price > 0) results.push(quote);
+  }
+  return results;
+}
 
-  if (!res.ok) return [];
+async function getQuotesBatch(tickers: string[]): Promise<QuoteData[]> {
+  try {
+    const symbols = tickers.join(",");
+    // Prova query2 invece di query1
+    const url = `https://query2.finance.yahoo.com/v7/finance/quote?symbols=${encodeURIComponent(symbols)}`;
+    const res = await fetch(url, { headers: YAHOO_HEADERS, next: { revalidate: 60 } });
+    if (!res.ok) return [];
 
-  const data = await res.json();
-  const results = data?.quoteResponse?.result || [];
+    const data = await res.json();
+    const results = data?.quoteResponse?.result || [];
+    if (results.length === 0) return [];
 
-  return results.map((q: any) => ({
-    ticker: q.symbol,
-    name: q.shortName || q.symbol,
-    price: q.regularMarketPrice || 0,
-    change: q.regularMarketChange || 0,
-    changePct: q.regularMarketChangePercent || 0,
-    volume: q.regularMarketVolume || 0,
-    avgVolume: q.averageDailyVolume10Day || 1,
-    volRatio: q.regularMarketVolume && q.averageDailyVolume10Day
-      ? +(q.regularMarketVolume / q.averageDailyVolume10Day).toFixed(2)
-      : 1,
-    high52w: q.fiftyTwoWeekHigh || 0,
-    low52w: q.fiftyTwoWeekLow || 0,
-    marketCap: q.marketCap || 0,
-  }));
+    return results.map((q: any) => ({
+      ticker: q.symbol,
+      name: q.shortName || q.symbol,
+      price: q.regularMarketPrice || 0,
+      change: q.regularMarketChange || 0,
+      changePct: q.regularMarketChangePercent || 0,
+      volume: q.regularMarketVolume || 0,
+      avgVolume: q.averageDailyVolume10Day || 1,
+      volRatio: q.regularMarketVolume && q.averageDailyVolume10Day
+        ? +(q.regularMarketVolume / q.averageDailyVolume10Day).toFixed(2)
+        : 1,
+      high52w: q.fiftyTwoWeekHigh || 0,
+      low52w: q.fiftyTwoWeekLow || 0,
+      marketCap: q.marketCap || 0,
+    }));
+  } catch {
+    return [];
+  }
 }
 
 export async function getHistory(ticker: string, range = "3mo", interval = "1d"): Promise<HistoryPoint[]> {
-  const url = `${YAHOO_BASE}/v8/finance/chart/${encodeURIComponent(ticker)}?range=${range}&interval=${interval}`;
+  try {
+    // Usa query2 che è più permissivo
+    const url = `https://query2.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(ticker)}?range=${range}&interval=${interval}&includePrePost=false`;
+    const res = await fetch(url, { headers: YAHOO_HEADERS, next: { revalidate: 300 } });
+    if (!res.ok) return [];
 
-  const res = await fetch(url, {
-    headers: { "User-Agent": "Mozilla/5.0" },
-    next: { revalidate: 300 },
-  });
+    const data = await res.json();
+    const result = data?.chart?.result?.[0];
+    if (!result) return [];
 
-  if (!res.ok) return [];
+    const timestamps = result.timestamp || [];
+    const ohlcv = result.indicators?.quote?.[0] || {};
 
-  const data = await res.json();
-  const result = data?.chart?.result?.[0];
-  if (!result) return [];
-
-  const timestamps = result.timestamp || [];
-  const ohlcv = result.indicators?.quote?.[0] || {};
-
-  return timestamps.map((ts: number, i: number) => ({
-    date: new Date(ts * 1000).toISOString().split("T")[0],
-    open: +(ohlcv.open?.[i] || 0).toFixed(2),
-    high: +(ohlcv.high?.[i] || 0).toFixed(2),
-    low: +(ohlcv.low?.[i] || 0).toFixed(2),
-    close: +(ohlcv.close?.[i] || 0).toFixed(2),
-    volume: ohlcv.volume?.[i] || 0,
-  })).filter((p: HistoryPoint) => p.close > 0);
+    return timestamps.map((ts: number, i: number) => ({
+      date: new Date(ts * 1000).toISOString().split("T")[0],
+      open: +(ohlcv.open?.[i] || 0).toFixed(2),
+      high: +(ohlcv.high?.[i] || 0).toFixed(2),
+      low: +(ohlcv.low?.[i] || 0).toFixed(2),
+      close: +(ohlcv.close?.[i] || 0).toFixed(2),
+      volume: ohlcv.volume?.[i] || 0,
+    })).filter((p: HistoryPoint) => p.close > 0);
+  } catch {
+    return [];
+  }
 }
 
 // Calcolo RSI
@@ -151,7 +237,7 @@ export function computeSignals(ticker: string, history: HistoryPoint[]): Technic
     reasons.push("Prezzo sotto SMA20");
   }
 
-  // MACD semplificato (EMA12 - EMA26 direction)
+  // MACD semplificato
   const ema12 = sma(closes, 12);
   const ema26 = sma(closes, 26);
   const macdVal = ema12 - ema26;
