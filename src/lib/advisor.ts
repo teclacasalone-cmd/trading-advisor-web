@@ -1,4 +1,4 @@
-import { getQuotes, getHistory, computeSignals, WATCHLIST, ASSET_NAMES, type QuoteData, type HistoryPoint, type TechnicalSignals } from "./yahoo";
+import { getQuotes, getHistory, computeSignals, getAnalystData, WATCHLIST, ASSET_NAMES, type QuoteData, type HistoryPoint, type TechnicalSignals, type AnalystData } from "./yahoo";
 import { fetchNews, summarizeSentiment, getFearGreedIndex } from "./news";
 import { generateMarketBriefing, analyzeNewsWithAI } from "./gemini";
 
@@ -17,7 +17,8 @@ export interface Recommendation {
   reasons: string[];
   timing: string;
   sector: string;
-  affordable: boolean; // sotto il budget dell'utente
+  affordable: boolean;
+  analyst: AnalystData | null; // consensus analisti (dati broker/Fineco)
 }
 
 export interface AdvisoryReport {
@@ -77,7 +78,8 @@ function generateRecommendation(
   signals: TechnicalSignals,
   history: HistoryPoint[],
   marketSentiment: string,
-  fearGreedScore: number
+  fearGreedScore: number,
+  analyst: AnalystData | null
 ): Recommendation | null {
   const price = quote.price;
   if (price <= 0 || history.length < 30) return null;
@@ -190,6 +192,26 @@ function generateRecommendation(
     timing = "Nessuna azione richiesta, monitorare settimanalmente";
   }
 
+  // Consensus analisti (dati broker — stessi di Fineco)
+  if (analyst) {
+    const recMap: Record<string, number> = {
+      strong_buy: 2, buy: 1, hold: 0, sell: -1, strong_sell: -2, underperform: -1, outperform: 1,
+    };
+    const analystScore = recMap[analyst.recommendation] ?? 0;
+
+    if (analyst.upside > 15 && analystScore >= 1) {
+      reasons.push(`Analisti: ${analyst.recommendation.toUpperCase()} — target €${analyst.targetPrice} (+${analyst.upside}%, ${analyst.numAnalysts} analisti)`);
+      confidence += 8;
+      if (action === "COMPRA") targetPrice = Math.max(targetPrice, analyst.targetPrice);
+    } else if (analyst.upside > 5 && analystScore >= 0) {
+      reasons.push(`Analisti: ${analyst.recommendation.toUpperCase()} — target €${analyst.targetPrice} (+${analyst.upside}%)`);
+      confidence += 3;
+    } else if (analyst.upside < -5 || analystScore <= -1) {
+      reasons.push(`Analisti: ${analyst.recommendation.toUpperCase()} — target €${analyst.targetPrice} (${analyst.upside}%)`);
+      if (action === "COMPRA") confidence -= 5;
+    }
+  }
+
   // Calcolo expected return
   const expectedReturn = +((targetPrice - price) / price * 100).toFixed(1);
 
@@ -233,6 +255,7 @@ function generateRecommendation(
     timing,
     sector: ASSET_NAMES[ticker] || "",
     affordable: price <= 100,
+    analyst,
   };
 }
 
@@ -272,7 +295,8 @@ export async function generateFullReport(): Promise<AdvisoryReport> {
       if (history.length < 30) continue;
 
       const signals = computeSignals(ticker, history);
-      const rec = generateRecommendation(ticker, quote, signals, history, marketSentiment, fearGreed.score);
+      const analyst = await getAnalystData(ticker);
+      const rec = generateRecommendation(ticker, quote, signals, history, marketSentiment, fearGreed.score, analyst);
 
       if (rec) {
         if (rec.action === "VENDI" && rec.confidence > 60) {

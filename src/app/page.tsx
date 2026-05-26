@@ -719,6 +719,29 @@ function RecommendationCard({ rec, onChartClick }: { rec: any; onChartClick: () 
         </div>
       </div>
 
+      {/* Consensus analisti (dati broker) */}
+      {rec.analyst && (
+        <div className="rounded-lg p-3 mb-3" style={{ background: "rgba(59,130,246,0.1)", border: "1px solid rgba(59,130,246,0.3)" }}>
+          <div className="flex items-center gap-2 mb-1">
+            <span className="text-xs font-bold" style={{ color: "#60a5fa" }}>CONSENSUS ANALISTI (Broker/Fineco)</span>
+            <span className="px-2 py-0.5 rounded text-xs font-bold" style={{
+              background: rec.analyst.recommendation === "buy" || rec.analyst.recommendation === "strong_buy" ? "rgba(34,197,94,0.2)" :
+                rec.analyst.recommendation === "sell" || rec.analyst.recommendation === "strong_sell" ? "rgba(239,68,68,0.2)" : "rgba(234,179,8,0.2)",
+              color: rec.analyst.recommendation === "buy" || rec.analyst.recommendation === "strong_buy" ? "#22c55e" :
+                rec.analyst.recommendation === "sell" || rec.analyst.recommendation === "strong_sell" ? "#ef4444" : "#eab308",
+            }}>
+              {rec.analyst.recommendation.toUpperCase().replace("_", " ")}
+            </span>
+          </div>
+          <div className="flex gap-4 text-xs" style={{ color: "#94a3b8" }}>
+            <span>Target: <strong style={{ color: "#60a5fa" }}>€{rec.analyst.targetPrice}</strong></span>
+            <span>Range: €{rec.analyst.targetLow} - €{rec.analyst.targetHigh}</span>
+            <span>Upside: <strong style={{ color: rec.analyst.upside > 0 ? "#22c55e" : "#ef4444" }}>{rec.analyst.upside > 0 ? "+" : ""}{rec.analyst.upside}%</strong></span>
+            <span>{rec.analyst.numAnalysts} analisti</span>
+          </div>
+        </div>
+      )}
+
       <div className="space-y-1">
         <p className="text-xs font-bold" style={{ color: "#94a3b8" }}>Perché:</p>
         {rec.reasons.map((r: string, i: number) => (

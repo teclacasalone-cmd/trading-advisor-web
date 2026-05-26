@@ -12,6 +12,15 @@ export interface QuoteData {
   marketCap: number;
 }
 
+export interface AnalystData {
+  targetPrice: number;
+  targetHigh: number;
+  targetLow: number;
+  recommendation: string; // buy, hold, sell, strong_buy, etc.
+  numAnalysts: number;
+  upside: number; // % rispetto al prezzo attuale
+}
+
 export interface HistoryPoint {
   date: string;
   open: number;
@@ -264,6 +273,37 @@ export function computeSignals(ticker: string, history: HistoryPoint[]): Technic
   else overallSignal = "NEUTRO";
 
   return { ticker, price, rsi, macdSignal, trend, volumeSignal, overallSignal, score, reasons };
+}
+
+// Dati analisti (consensus broker — stessi dati di Fineco)
+export async function getAnalystData(ticker: string): Promise<AnalystData | null> {
+  try {
+    const url = `https://query2.finance.yahoo.com/v6/finance/quoteSummary/${encodeURIComponent(ticker)}?modules=financialData`;
+    const res = await fetch(url, { headers: YAHOO_HEADERS, next: { revalidate: 3600 } });
+    if (!res.ok) return null;
+
+    const data = await res.json();
+    const fd = data?.quoteSummary?.result?.[0]?.financialData;
+    if (!fd) return null;
+
+    const targetPrice = fd.targetMeanPrice?.raw || 0;
+    const currentPrice = fd.currentPrice?.raw || 0;
+    const recommendation = fd.recommendationKey || "none";
+    const numAnalysts = fd.numberOfAnalystOpinions?.raw || 0;
+
+    if (targetPrice === 0 || currentPrice === 0 || numAnalysts === 0) return null;
+
+    return {
+      targetPrice: +targetPrice.toFixed(2),
+      targetHigh: +(fd.targetHighPrice?.raw || targetPrice).toFixed(2),
+      targetLow: +(fd.targetLowPrice?.raw || targetPrice).toFixed(2),
+      recommendation,
+      numAnalysts,
+      upside: +((targetPrice - currentPrice) / currentPrice * 100).toFixed(1),
+    };
+  } catch {
+    return null;
+  }
 }
 
 export const WATCHLIST: Record<string, string[]> = {
