@@ -5,6 +5,7 @@ import dynamic from "next/dynamic";
 import FearGreedGauge from "@/components/FearGreedGauge";
 import NewsCard from "@/components/NewsCard";
 import SignalBadge from "@/components/SignalBadge";
+import { exportAdvisoryPDF, exportStrategyPDF } from "@/lib/pdf";
 
 const SectorChart = dynamic(() => import("@/components/SectorChart"), { ssr: false });
 const TradingViewChart = dynamic(() => import("@/components/TradingViewChart"), { ssr: false });
@@ -142,6 +143,15 @@ function AdvisoryTab({ report, setReport, loading, setLoading }: { report: any; 
         >
           {loading ? "Analisi in corso... (1-2 minuti)" : report ? "Aggiorna Raccomandazioni" : "Genera Raccomandazioni"}
         </button>
+        {report && (
+          <button
+            onClick={() => exportAdvisoryPDF(report)}
+            className="ml-3 px-4 py-3 rounded-lg font-bold text-sm transition-all hover:brightness-110"
+            style={{ background: "var(--surface-light)", color: "var(--accent)", border: "1px solid var(--accent)" }}
+          >
+            Scarica PDF
+          </button>
+        )}
         <div className="mt-4 p-3 rounded-lg text-xs" style={{ background: "var(--surface-light)", color: "#94a3b8" }}>
           <strong style={{ color: "var(--accent)" }}>Quando analizzare:</strong>
           <span className="ml-1">08:00-09:00 (prima di Milano) | 14:00-15:00 (prima di Wall Street) | Crypto: sempre</span>
@@ -357,6 +367,15 @@ function StrategyTab() {
         >
           {loading ? "Confronto in corso..." : data ? "Aggiorna Confronto" : "Confronta con Dati Reali"}
         </button>
+        {data && (
+          <button
+            onClick={() => exportStrategyPDF(data)}
+            className="ml-3 px-4 py-3 rounded-lg font-bold text-sm transition-all hover:brightness-110"
+            style={{ background: "var(--surface-light)", color: "var(--accent)", border: "1px solid var(--accent)" }}
+          >
+            Scarica PDF
+          </button>
+        )}
       </Card>
 
       {loading && (
@@ -529,6 +548,34 @@ function StrategyTab() {
           {/* Regole */}
           <Card>
             <h3 className="font-bold mb-3" style={{ color: "var(--accent)" }}>Regole della Strategia</h3>
+            {/* Accuratezza previsioni */}
+            {data.accuracy && data.accuracy.total > 0 && (
+              <div className="rounded-lg p-4 mb-4" style={{ background: "rgba(91,138,245,0.1)", border: "1px solid rgba(91,138,245,0.3)" }}>
+                <h4 className="text-sm font-bold mb-2" style={{ color: "var(--accent)" }}>Accuratezza Previsioni (auto-apprendimento)</h4>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+                  <div>
+                    <span style={{ color: "#94a3b8" }}>Previsioni verificate: </span>
+                    <strong>{data.accuracy.total}</strong>
+                  </div>
+                  <div>
+                    <span style={{ color: "#94a3b8" }}>Corrette: </span>
+                    <strong style={{ color: "#22c55e" }}>{data.accuracy.correct}</strong>
+                  </div>
+                  <div>
+                    <span style={{ color: "#94a3b8" }}>Accuratezza: </span>
+                    <strong style={{ color: data.accuracy.accuracy >= 60 ? "#22c55e" : data.accuracy.accuracy >= 40 ? "#eab308" : "#ef4444" }}>
+                      {data.accuracy.accuracy}%
+                    </strong>
+                  </div>
+                  <div>
+                    <span style={{ color: "#94a3b8" }}>Rendimento medio: </span>
+                    <strong style={{ color: data.accuracy.avgReturn >= 0 ? "#22c55e" : "#ef4444" }}>
+                      {data.accuracy.avgReturn >= 0 ? "+" : ""}{data.accuracy.avgReturn}%
+                    </strong>
+                  </div>
+                </div>
+              </div>
+            )}
             <div className="space-y-2">
               {data.rules.map((rule: string, i: number) => (
                 <div key={i} className="flex items-start gap-2">

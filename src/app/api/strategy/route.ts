@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { STRATEGY_PICKS, STRATEGY_RULES, STRATEGY_DATE, checkStrategy } from "@/lib/strategy";
 import { getQuotes, getAnalystData } from "@/lib/yahoo";
 import { askGemini } from "@/lib/gemini";
+import { saveStrategyChecks, getAccuracyStats, getReportHistory } from "@/lib/supabase";
 
 export const maxDuration = 60;
 
@@ -52,12 +53,32 @@ Rispondi con:
       aiCommentary = await askGemini(prompt);
     } catch {}
 
+    // Salva in Supabase
+    let accuracy = { total: 0, correct: 0, wrong: 0, accuracy: 0, avgReturn: 0 };
+    let history: any[] = [];
+    try {
+      await saveStrategyChecks(
+        checks.filter((c: any) => c.currentPrice > 0).map((c: any) => ({
+          ticker: c.pick.ticker,
+          reference_price: c.pick.referencePrice,
+          current_price: c.currentPrice,
+          change_pct: c.changePct,
+          status: c.status,
+          still_buy: c.stillBuy,
+        }))
+      );
+      accuracy = await getAccuracyStats();
+      history = await getReportHistory(5);
+    } catch {}
+
     return NextResponse.json({
       date: new Date().toISOString(),
       strategyDate: STRATEGY_DATE,
       checks,
       rules: STRATEGY_RULES,
       aiCommentary,
+      accuracy,
+      history,
       stats: {
         total: checks.length,
         confirmed: confirmed.length,
