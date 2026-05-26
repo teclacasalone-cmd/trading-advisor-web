@@ -22,16 +22,26 @@ export default function Home() {
   const [tab, setTab] = useState<Tab>("advisory");
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
+    <div className="min-h-screen" style={{ background: "var(--background)", color: "var(--foreground)" }}>
       {/* Ticker tape */}
       <TradingViewTicker />
 
-      <header className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
-          <h1 className="text-xl font-bold">Trading Advisor</h1>
-          <p className="text-xs text-gray-400">Il tuo consulente finanziario AI</p>
+      {/* Header */}
+      <header style={{ background: "var(--surface)", borderBottom: "1px solid var(--border)" }}>
+        <div className="max-w-7xl mx-auto px-4 py-5 flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-black tracking-tight" style={{ color: "var(--accent)" }}>
+              Trading Advisor
+            </h1>
+            <p className="text-xs mt-0.5" style={{ color: "#94a3b8" }}>Il tuo consulente finanziario AI</p>
+          </div>
+          {/* Decorative globe hint */}
+          <div className="hidden md:block w-16 h-16 rounded-full opacity-30" style={{
+            background: "radial-gradient(circle at 30% 30%, #c5f82a, #06b6d4, #0f0e2a)",
+            border: "1px solid rgba(255,255,255,0.1)",
+          }} />
         </div>
-        <nav className="max-w-7xl mx-auto px-4 flex gap-1 pb-2 overflow-x-auto">
+        <nav className="max-w-7xl mx-auto px-4 flex gap-1 pb-3 overflow-x-auto">
           {(
             [
               ["advisory", "Cosa Comprare"],
@@ -45,11 +55,12 @@ export default function Home() {
             <button
               key={key}
               onClick={() => setTab(key)}
-              className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors whitespace-nowrap ${
-                tab === key
-                  ? "bg-blue-600 text-white"
-                  : "text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-              }`}
+              className="px-4 py-2 rounded-lg text-sm font-bold transition-all whitespace-nowrap"
+              style={{
+                background: tab === key ? "var(--accent)" : "transparent",
+                color: tab === key ? "#0f0e2a" : "#94a3b8",
+                border: tab === key ? "none" : "1px solid var(--border)",
+              }}
             >
               {label}
             </button>
@@ -66,14 +77,29 @@ export default function Home() {
         {tab === "analyze" && <AnalyzeTab />}
       </main>
 
-      <footer className="text-center text-xs text-gray-400 py-4 px-4">
+      <footer className="text-center text-xs py-6 px-4" style={{ color: "#475569" }}>
         Questo tool è solo a scopo informativo e didattico. Non è consulenza finanziaria professionale. Investi solo ciò che puoi permetterti di perdere.
       </footer>
     </div>
   );
 }
 
-// === ADVISORY — COSA COMPRARE ===
+// === Card base ===
+function Card({ children, className = "", highlight = false }: { children: React.ReactNode; className?: string; highlight?: boolean }) {
+  return (
+    <div
+      className={`rounded-xl p-6 ${className}`}
+      style={{
+        background: highlight ? "linear-gradient(135deg, #1a1845 0%, #1e2a4a 100%)" : "var(--surface)",
+        border: `1px solid ${highlight ? "var(--accent)" : "var(--border)"}`,
+      }}
+    >
+      {children}
+    </div>
+  );
+}
+
+// === ADVISORY ===
 function AdvisoryTab() {
   const [report, setReport] = useState<any>(null);
   const [loading, setLoading] = useState(false);
@@ -95,62 +121,69 @@ function AdvisoryTab() {
 
   return (
     <div className="space-y-6">
-      <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow">
-        <h2 className="text-xl font-bold mb-2">Cosa comprare oggi?</h2>
-        <p className="text-sm text-gray-500 mb-4">
-          Analisi di <strong>tutti i mercati</strong>: azioni USA, FTSE MIB (Italia), crypto, commodities, forex.
+      <Card highlight>
+        <h2 className="text-2xl font-black mb-2" style={{ color: "var(--accent)" }}>
+          Cosa comprare oggi?
+        </h2>
+        <p className="text-sm mb-5" style={{ color: "#94a3b8" }}>
+          Analisi di <strong style={{ color: "var(--foreground)" }}>tutti i mercati</strong>: azioni USA, FTSE MIB, crypto, commodities, forex.
           Per ogni asset: cosa fare, quando, per quanto tempo, e quanto puoi guadagnare.
         </p>
         <button
           onClick={generate}
           disabled={loading}
-          className="px-6 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="px-6 py-3 rounded-lg font-bold text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:brightness-110"
+          style={{ background: "var(--accent)", color: "#0f0e2a" }}
         >
           {loading ? "Analisi in corso... (1-2 minuti)" : "Genera Raccomandazioni"}
         </button>
-        {error && <p className="text-red-500 mt-2">{error}</p>}
-      </div>
+        {error && <p className="text-red-400 mt-2">{error}</p>}
+      </Card>
 
       {loading && (
-        <div className="bg-white dark:bg-gray-800 rounded-lg p-8 shadow text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4" />
-          <p className="text-gray-500">Sto analizzando tutti i mercati...</p>
-          <p className="text-xs text-gray-400 mt-1">USA, Italia, Crypto, Commodities, Forex — indicatori tecnici + notizie + sentiment</p>
-        </div>
+        <Card>
+          <div className="text-center py-8">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 mx-auto mb-4" style={{ borderColor: "var(--accent)" }} />
+            <p style={{ color: "#94a3b8" }}>Sto analizzando tutti i mercati...</p>
+            <p className="text-xs mt-1" style={{ color: "#475569" }}>USA, Italia, Crypto, Commodities, Forex — indicatori tecnici + notizie + AI</p>
+          </div>
+        </Card>
       )}
 
       {report && !loading && (
         <>
-          {/* Stato del mercato */}
+          {/* Market overview */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <FearGreedGauge score={report.fearGreed.score} rating={report.fearGreed.rating} />
-            <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow">
-              <h3 className="text-sm font-medium text-gray-500 mb-1">Condizione Mercato</h3>
-              <p className="text-lg font-bold">{report.marketCondition}</p>
-              <p className={`text-sm mt-2 font-medium ${
-                report.sentiment === "BULLISH" ? "text-green-600" :
-                report.sentiment === "BEARISH" ? "text-red-600" : "text-yellow-500"
-              }`}>
+            <Card>
+              <h3 className="text-xs font-medium mb-1" style={{ color: "#94a3b8" }}>Condizione Mercato</h3>
+              <p className="text-lg font-bold" style={{ color: "var(--accent)" }}>{report.marketCondition}</p>
+              <p className="text-sm mt-2 font-medium" style={{
+                color: report.sentiment === "BULLISH" ? "#22c55e" : report.sentiment === "BEARISH" ? "#ef4444" : "#eab308"
+              }}>
                 Sentiment: {report.sentiment}
               </p>
-            </div>
-            <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow">
-              <h3 className="text-sm font-medium text-gray-500 mb-1">Riepilogo</h3>
+            </Card>
+            <Card>
+              <h3 className="text-xs font-medium mb-1" style={{ color: "#94a3b8" }}>Riepilogo</h3>
               <p className="text-sm">{report.summary}</p>
-              <p className="text-xs text-gray-400 mt-2">
+              <p className="text-xs mt-2" style={{ color: "#475569" }}>
                 Aggiornato: {new Date(report.date).toLocaleString("it-IT")}
               </p>
-            </div>
+            </Card>
           </div>
 
           {/* AI Briefing */}
           {report.aiBriefing && (
-            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-lg p-6 shadow border border-blue-200 dark:border-blue-800">
+            <div className="rounded-xl p-6" style={{
+              background: "linear-gradient(135deg, #1a1845 0%, #0f2a1a 50%, #1a1845 100%)",
+              border: "1px solid var(--accent)",
+            }}>
               <div className="flex items-center gap-2 mb-3">
-                <span className="text-lg">🤖</span>
-                <h3 className="text-lg font-bold text-blue-800 dark:text-blue-300">Briefing AI — Il tuo consulente</h3>
+                <div className="w-8 h-8 rounded-lg flex items-center justify-center text-lg" style={{ background: "var(--accent)", color: "#0f0e2a" }}>AI</div>
+                <h3 className="text-lg font-black" style={{ color: "var(--accent)" }}>Briefing AI — Il tuo consulente</h3>
               </div>
-              <div className="prose prose-sm dark:prose-invert max-w-none text-gray-700 dark:text-gray-300 whitespace-pre-line">
+              <div className="text-sm leading-relaxed whitespace-pre-line" style={{ color: "#cbd5e1" }}>
                 {report.aiBriefing}
               </div>
             </div>
@@ -158,21 +191,18 @@ function AdvisoryTab() {
 
           {/* AI News Analysis */}
           {report.aiNewsAnalysis && (
-            <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow">
-              <div className="flex items-center gap-2 mb-3">
-                <span className="text-lg">📰</span>
-                <h3 className="font-bold">Analisi AI delle Notizie</h3>
-              </div>
-              <div className="text-sm text-gray-600 dark:text-gray-300 whitespace-pre-line">
+            <Card>
+              <h3 className="font-bold mb-3" style={{ color: "var(--accent)" }}>Analisi AI delle Notizie</h3>
+              <div className="text-sm whitespace-pre-line" style={{ color: "#94a3b8" }}>
                 {report.aiNewsAnalysis}
               </div>
-            </div>
+            </Card>
           )}
 
           {/* COMPRA */}
           <RecSection
-            title="COMPRA — Opportunit&agrave; identificate"
-            color="text-green-600"
+            title="COMPRA — Opportunità identificate"
+            color="#22c55e"
             recs={report.recommendations.filter((r: any) => r.action === "COMPRA")}
             onSelect={setSelectedTicker}
           />
@@ -180,31 +210,31 @@ function AdvisoryTab() {
           {/* ASPETTA */}
           <RecSection
             title="ASPETTA — Monitorare per ingresso"
-            color="text-yellow-600"
+            color="#eab308"
             recs={report.recommendations.filter((r: any) => r.action === "ASPETTA")}
             onSelect={setSelectedTicker}
           />
 
-          {/* Grafico TradingView se selezionato */}
+          {/* Chart */}
           {selectedTicker && (
-            <div className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow">
+            <Card>
               <div className="flex justify-between items-center mb-2">
-                <h3 className="font-bold">Grafico: {selectedTicker}</h3>
-                <button onClick={() => setSelectedTicker(null)} className="text-sm text-gray-400 hover:text-gray-600">Chiudi</button>
+                <h3 className="font-bold" style={{ color: "var(--accent)" }}>Grafico: {selectedTicker}</h3>
+                <button onClick={() => setSelectedTicker(null)} className="text-sm hover:opacity-80" style={{ color: "#94a3b8" }}>Chiudi</button>
               </div>
               <TradingViewChart symbol={tvSymbol(selectedTicker)} height={500} />
-            </div>
+            </Card>
           )}
 
           {/* EVITARE */}
           {report.avoidList.length > 0 && (
-            <div className="bg-red-50 dark:bg-red-900/20 rounded-lg p-6 shadow">
-              <h3 className="text-lg font-bold mb-3 text-red-600">DA EVITARE</h3>
+            <div className="rounded-xl p-6" style={{ background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)" }}>
+              <h3 className="text-lg font-bold mb-3 text-red-400">DA EVITARE</h3>
               <div className="space-y-2">
                 {report.avoidList.map((item: any) => (
                   <div key={item.ticker} className="flex items-center gap-3">
-                    <span className="font-bold text-red-600">{item.ticker}</span>
-                    <span className="text-sm text-gray-600 dark:text-gray-300">{item.reason}</span>
+                    <span className="font-bold text-red-400">{item.ticker}</span>
+                    <span className="text-sm" style={{ color: "#94a3b8" }}>{item.reason}</span>
                   </div>
                 ))}
               </div>
@@ -213,22 +243,22 @@ function AdvisoryTab() {
 
           {/* Settori */}
           {report.sectorsToWatch.length > 0 && (
-            <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow">
-              <h3 className="text-lg font-bold mb-3">Settori da osservare</h3>
+            <Card>
+              <h3 className="text-lg font-bold mb-3" style={{ color: "var(--accent)" }}>Settori da osservare</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {report.sectorsToWatch.map((s: any) => (
-                  <div key={s.sector} className="flex items-center justify-between border-b border-gray-100 dark:border-gray-700 pb-2">
+                  <div key={s.sector} className="flex items-center justify-between pb-2" style={{ borderBottom: "1px solid var(--border)" }}>
                     <span className="font-medium">{s.sector}</span>
                     <div className="text-right">
-                      <span className={`text-sm font-medium ${s.trend === "RIALZO" ? "text-green-600" : "text-red-600"}`}>
+                      <span className="text-sm font-medium" style={{ color: s.trend === "RIALZO" ? "#22c55e" : "#ef4444" }}>
                         {s.trend}
                       </span>
-                      <p className="text-xs text-gray-400">{s.reason}</p>
+                      <p className="text-xs" style={{ color: "#475569" }}>{s.reason}</p>
                     </div>
                   </div>
                 ))}
               </div>
-            </div>
+            </Card>
           )}
         </>
       )}
@@ -240,7 +270,7 @@ function RecSection({ title, color, recs, onSelect }: { title: string; color: st
   if (recs.length === 0) return null;
   return (
     <div>
-      <h3 className={`text-lg font-bold mb-3 ${color}`}>{title.replace("&agrave;", "à")}</h3>
+      <h3 className="text-lg font-bold mb-3" style={{ color }}>{title}</h3>
       <div className="grid gap-4">
         {recs.map((rec: any) => (
           <RecommendationCard key={rec.ticker} rec={rec} onChartClick={() => onSelect(rec.ticker)} />
@@ -250,7 +280,7 @@ function RecSection({ title, color, recs, onSelect }: { title: string; color: st
   );
 }
 
-// === MERCATI & GRAFICI ===
+// === MERCATI ===
 function MercatiTab() {
   const [selectedSymbol, setSelectedSymbol] = useState("NASDAQ:AAPL");
   const [heatmapExchange, setHeatmapExchange] = useState("SPX500");
@@ -275,33 +305,35 @@ function MercatiTab() {
 
   return (
     <div className="space-y-6">
-      <div className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow">
-        <h2 className="text-lg font-bold mb-3">Grafico Interattivo</h2>
+      <Card>
+        <h2 className="text-lg font-bold mb-3" style={{ color: "var(--accent)" }}>Grafico Interattivo</h2>
         <div className="flex flex-wrap gap-2 mb-4">
           {quickSymbols.map(s => (
             <button
               key={s.symbol}
               onClick={() => setSelectedSymbol(s.symbol)}
-              className={`px-3 py-1 rounded text-xs font-medium transition-colors ${
-                selectedSymbol === s.symbol
-                  ? "bg-blue-600 text-white"
-                  : "bg-gray-100 dark:bg-gray-700 hover:bg-gray-200"
-              }`}
+              className="px-3 py-1.5 rounded-lg text-xs font-bold transition-all"
+              style={{
+                background: selectedSymbol === s.symbol ? "var(--accent)" : "var(--surface-light)",
+                color: selectedSymbol === s.symbol ? "#0f0e2a" : "#94a3b8",
+                border: `1px solid ${selectedSymbol === s.symbol ? "var(--accent)" : "var(--border)"}`,
+              }}
             >
               {s.label}
             </button>
           ))}
         </div>
         <TradingViewChart symbol={selectedSymbol} height={550} />
-      </div>
+      </Card>
 
-      <div className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow">
+      <Card>
         <div className="flex items-center justify-between mb-3">
-          <h2 className="text-lg font-bold">Heatmap Mercato</h2>
+          <h2 className="text-lg font-bold" style={{ color: "var(--accent)" }}>Heatmap Mercato</h2>
           <select
             value={heatmapExchange}
             onChange={e => setHeatmapExchange(e.target.value)}
-            className="px-3 py-1.5 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm"
+            className="px-3 py-1.5 rounded-lg text-sm font-medium"
+            style={{ background: "var(--surface-light)", color: "var(--foreground)", border: "1px solid var(--border)" }}
           >
             <option value="SPX500">S&P 500</option>
             <option value="NASDAQ100">Nasdaq 100</option>
@@ -311,7 +343,7 @@ function MercatiTab() {
           </select>
         </div>
         <TradingViewHeatmap exchange={heatmapExchange} height={500} />
-      </div>
+      </Card>
     </div>
   );
 }
@@ -332,32 +364,32 @@ function SignalsTab() {
 
   return (
     <div className="space-y-4">
-      <h2 className="text-lg font-bold">Segnali Tecnici — Azioni & Crypto</h2>
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-x-auto">
+      <h2 className="text-lg font-bold" style={{ color: "var(--accent)" }}>Segnali Tecnici — Azioni & Crypto</h2>
+      <div className="rounded-xl overflow-x-auto" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
         <table className="w-full text-sm">
-          <thead className="bg-gray-50 dark:bg-gray-700">
-            <tr>
-              <th className="px-4 py-3 text-left">Ticker</th>
-              <th className="px-4 py-3 text-left">Prezzo</th>
-              <th className="px-4 py-3 text-left">RSI</th>
-              <th className="px-4 py-3 text-left">Trend</th>
-              <th className="px-4 py-3 text-left">Segnale</th>
-              <th className="px-4 py-3 text-left">Score</th>
-              <th className="px-4 py-3 text-left hidden md:table-cell">Motivi</th>
+          <thead>
+            <tr style={{ background: "var(--surface-light)" }}>
+              <th className="px-4 py-3 text-left text-xs font-bold" style={{ color: "#94a3b8" }}>Ticker</th>
+              <th className="px-4 py-3 text-left text-xs font-bold" style={{ color: "#94a3b8" }}>Prezzo</th>
+              <th className="px-4 py-3 text-left text-xs font-bold" style={{ color: "#94a3b8" }}>RSI</th>
+              <th className="px-4 py-3 text-left text-xs font-bold" style={{ color: "#94a3b8" }}>Trend</th>
+              <th className="px-4 py-3 text-left text-xs font-bold" style={{ color: "#94a3b8" }}>Segnale</th>
+              <th className="px-4 py-3 text-left text-xs font-bold" style={{ color: "#94a3b8" }}>Score</th>
+              <th className="px-4 py-3 text-left text-xs font-bold hidden md:table-cell" style={{ color: "#94a3b8" }}>Motivi</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
+          <tbody>
             {signals.map((s: any) => (
-              <tr key={s.ticker} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                <td className="px-4 py-3 font-medium">{s.ticker}</td>
+              <tr key={s.ticker} className="hover:brightness-110" style={{ borderBottom: "1px solid var(--border)" }}>
+                <td className="px-4 py-3 font-bold">{s.ticker}</td>
                 <td className="px-4 py-3">${s.price}</td>
-                <td className={`px-4 py-3 ${s.rsi < 30 ? "text-green-600" : s.rsi > 70 ? "text-red-600" : ""}`}>{s.rsi}</td>
+                <td className="px-4 py-3" style={{ color: s.rsi < 30 ? "#22c55e" : s.rsi > 70 ? "#ef4444" : "inherit" }}>{s.rsi}</td>
                 <td className="px-4 py-3 text-xs">{s.trend}</td>
                 <td className="px-4 py-3"><SignalBadge signal={s.overallSignal} /></td>
-                <td className={`px-4 py-3 font-bold ${s.score > 0 ? "text-green-600" : s.score < 0 ? "text-red-600" : ""}`}>
+                <td className="px-4 py-3 font-bold" style={{ color: s.score > 0 ? "#22c55e" : s.score < 0 ? "#ef4444" : "inherit" }}>
                   {s.score > 0 ? "+" : ""}{s.score}
                 </td>
-                <td className="px-4 py-3 text-xs text-gray-500 hidden md:table-cell">
+                <td className="px-4 py-3 text-xs hidden md:table-cell" style={{ color: "#94a3b8" }}>
                   {s.reasons?.slice(0, 2).join(" | ")}
                 </td>
               </tr>
@@ -390,15 +422,17 @@ function NewsTab() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between flex-wrap gap-2">
-        <h2 className="text-lg font-bold">News & Sentiment</h2>
+        <h2 className="text-lg font-bold" style={{ color: "var(--accent)" }}>News & Sentiment</h2>
         <div className="flex gap-2">
           {["Tutti", "POSITIVO", "NEGATIVO", "NEUTRO"].map(f => (
             <button
               key={f}
               onClick={() => setFilter(f)}
-              className={`px-3 py-1 rounded text-xs font-medium ${
-                filter === f ? "bg-blue-600 text-white" : "bg-gray-200 dark:bg-gray-700"
-              }`}
+              className="px-3 py-1 rounded-lg text-xs font-bold"
+              style={{
+                background: filter === f ? "var(--accent)" : "var(--surface-light)",
+                color: filter === f ? "#0f0e2a" : "#94a3b8",
+              }}
             >
               {f}
             </button>
@@ -409,7 +443,7 @@ function NewsTab() {
         {filtered.map((n: any, i: number) => (
           <NewsCard key={i} {...n} />
         ))}
-        {filtered.length === 0 && <p className="text-gray-400">Nessuna notizia con questo filtro</p>}
+        {filtered.length === 0 && <p style={{ color: "#475569" }}>Nessuna notizia con questo filtro</p>}
       </div>
     </div>
   );
@@ -436,11 +470,12 @@ function VolumesTab() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between flex-wrap gap-2">
-        <h2 className="text-lg font-bold">Volume Scanner — Dove entrano i soldi</h2>
+        <h2 className="text-lg font-bold" style={{ color: "var(--accent)" }}>Volume Scanner — Dove entrano i soldi</h2>
         <select
           value={category}
           onChange={e => setCategory(e.target.value)}
-          className="px-3 py-1.5 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm"
+          className="px-3 py-1.5 rounded-lg text-sm font-medium"
+          style={{ background: "var(--surface-light)", color: "var(--foreground)", border: "1px solid var(--border)" }}
         >
           {CATEGORIES.map(c => (
             <option key={c} value={c}>{c}</option>
@@ -449,37 +484,36 @@ function VolumesTab() {
       </div>
 
       {loading ? <LoadingSpinner /> : (
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-x-auto">
+        <div className="rounded-xl overflow-x-auto" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
           <table className="w-full text-sm">
-            <thead className="bg-gray-50 dark:bg-gray-700">
-              <tr>
-                <th className="px-4 py-3 text-left">Ticker</th>
-                <th className="px-4 py-3 text-left">Nome</th>
-                <th className="px-4 py-3 text-left">Prezzo</th>
-                <th className="px-4 py-3 text-left">Variazione %</th>
-                <th className="px-4 py-3 text-left">Volume</th>
-                <th className="px-4 py-3 text-left">Vol vs Media</th>
-                <th className="px-4 py-3 text-left">Segnale</th>
+            <thead>
+              <tr style={{ background: "var(--surface-light)" }}>
+                {["Ticker", "Nome", "Prezzo", "Variazione %", "Volume", "Vol vs Media", "Segnale"].map(h => (
+                  <th key={h} className="px-4 py-3 text-left text-xs font-bold" style={{ color: "#94a3b8" }}>{h}</th>
+                ))}
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
+            <tbody>
               {data.map((q: any) => (
-                <tr key={q.ticker} className={q.volRatio >= 1.5 ? "bg-yellow-50 dark:bg-yellow-900/20" : ""}>
-                  <td className="px-4 py-3 font-medium">{q.ticker}</td>
+                <tr key={q.ticker} style={{
+                  borderBottom: "1px solid var(--border)",
+                  background: q.volRatio >= 1.5 ? "rgba(197,248,42,0.05)" : "transparent",
+                }}>
+                  <td className="px-4 py-3 font-bold">{q.ticker}</td>
                   <td className="px-4 py-3">{q.name}</td>
                   <td className="px-4 py-3">{q.price?.toLocaleString()}</td>
-                  <td className={`px-4 py-3 font-medium ${q.changePct >= 0 ? "text-green-600" : "text-red-600"}`}>
+                  <td className="px-4 py-3 font-medium" style={{ color: q.changePct >= 0 ? "#22c55e" : "#ef4444" }}>
                     {q.changePct >= 0 ? "+" : ""}{q.changePct?.toFixed(2)}%
                   </td>
                   <td className="px-4 py-3">{q.volume?.toLocaleString()}</td>
-                  <td className={`px-4 py-3 font-bold ${q.volRatio >= 1.5 ? "text-yellow-600" : ""}`}>
+                  <td className="px-4 py-3 font-bold" style={{ color: q.volRatio >= 1.5 ? "var(--accent)" : "inherit" }}>
                     {q.volRatio}x
                   </td>
                   <td className="px-4 py-3">
                     {q.volRatio >= 1.5 ? (
-                      <span className="px-2 py-0.5 bg-yellow-200 text-yellow-800 rounded text-xs font-medium">ANOMALO</span>
+                      <span className="px-2 py-0.5 rounded text-xs font-bold" style={{ background: "var(--accent)", color: "#0f0e2a" }}>ANOMALO</span>
                     ) : (
-                      <span className="text-xs text-gray-400">Normale</span>
+                      <span className="text-xs" style={{ color: "#475569" }}>Normale</span>
                     )}
                   </td>
                 </tr>
@@ -512,31 +546,35 @@ function AnalyzeTab() {
 
   useEffect(() => { analyze(); }, []);
 
-  const ticker = input.toUpperCase().trim();
-
   return (
     <div className="space-y-4">
-      <h2 className="text-lg font-bold">Analisi Asset</h2>
+      <h2 className="text-lg font-bold" style={{ color: "var(--accent)" }}>Analisi Asset</h2>
       <div className="flex gap-2">
         <input
           value={input}
           onChange={e => setInput(e.target.value)}
           onKeyDown={e => e.key === "Enter" && analyze()}
           placeholder="Ticker (es. AAPL, BTC-USD, ISP.MI, ENI.MI)"
-          className="px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm flex-1"
+          className="px-3 py-2 rounded-lg text-sm flex-1"
+          style={{ background: "var(--surface-light)", color: "var(--foreground)", border: "1px solid var(--border)" }}
         />
         <button
           onClick={analyze}
-          className="px-4 py-2 bg-blue-600 text-white rounded text-sm font-medium hover:bg-blue-700"
+          className="px-4 py-2 rounded-lg text-sm font-bold hover:brightness-110"
+          style={{ background: "var(--accent)", color: "#0f0e2a" }}
         >
           Analizza
         </button>
       </div>
 
-      {/* Quick buttons */}
       <div className="flex flex-wrap gap-1">
         {["AAPL", "NVDA", "TSLA", "BTC-USD", "ETH-USD", "ISP.MI", "UCG.MI", "ENI.MI", "RACE.MI", "GC=F", "CL=F", "EURUSD=X"].map(t => (
-          <button key={t} onClick={() => { setInput(t); }} className="px-2 py-1 rounded text-xs bg-gray-100 dark:bg-gray-700 hover:bg-gray-200">
+          <button
+            key={t}
+            onClick={() => setInput(t)}
+            className="px-2 py-1 rounded text-xs font-medium transition-all hover:brightness-110"
+            style={{ background: "var(--surface-light)", color: "#94a3b8", border: "1px solid var(--border)" }}
+          >
             {t}
           </button>
         ))}
@@ -546,144 +584,148 @@ function AnalyzeTab() {
 
       {data?.signals && !loading && (
         <div className="space-y-4">
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow">
+          <Card>
             <div className="flex items-center gap-4 mb-4 flex-wrap">
-              <h3 className="text-2xl font-bold">{data.signals.ticker}</h3>
+              <h3 className="text-2xl font-black" style={{ color: "var(--accent)" }}>{data.signals.ticker}</h3>
               <SignalBadge signal={data.signals.overallSignal} />
-              <span className="text-lg">${data.signals.price}</span>
+              <span className="text-lg font-bold">${data.signals.price}</span>
             </div>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-              <Stat label="RSI" value={data.signals.rsi} color={data.signals.rsi < 30 ? "green" : data.signals.rsi > 70 ? "red" : "gray"} />
-              <Stat label="MACD" value={data.signals.macdSignal} color={data.signals.macdSignal === "POSITIVO" ? "green" : "red"} />
+              <Stat label="RSI" value={data.signals.rsi} color={data.signals.rsi < 30 ? "#22c55e" : data.signals.rsi > 70 ? "#ef4444" : undefined} />
+              <Stat label="MACD" value={data.signals.macdSignal} color={data.signals.macdSignal === "POSITIVO" ? "#22c55e" : "#ef4444"} />
               <Stat label="Trend" value={data.signals.trend} />
-              <Stat label="Score" value={data.signals.score > 0 ? `+${data.signals.score}` : data.signals.score} color={data.signals.score > 0 ? "green" : data.signals.score < 0 ? "red" : "gray"} />
+              <Stat label="Score" value={data.signals.score > 0 ? `+${data.signals.score}` : data.signals.score} color={data.signals.score > 0 ? "#22c55e" : data.signals.score < 0 ? "#ef4444" : undefined} />
             </div>
             <div className="space-y-1">
-              <h4 className="text-sm font-medium text-gray-500">Motivazioni:</h4>
+              <h4 className="text-xs font-bold" style={{ color: "#94a3b8" }}>Motivazioni:</h4>
               {data.signals.reasons?.map((r: string, i: number) => (
-                <p key={i} className="text-sm text-gray-600 dark:text-gray-300">- {r}</p>
+                <p key={i} className="text-sm" style={{ color: "#cbd5e1" }}>- {r}</p>
               ))}
             </div>
-          </div>
+          </Card>
 
           {showChart && (
-            <div className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow">
-              <h3 className="font-bold mb-2">Grafico {data.signals.ticker}</h3>
+            <Card>
+              <h3 className="font-bold mb-2" style={{ color: "var(--accent)" }}>Grafico {data.signals.ticker}</h3>
               <TradingViewChart symbol={tvSymbol(data.signals.ticker)} height={500} />
-            </div>
+            </Card>
           )}
         </div>
       )}
 
-      {data?.error && <p className="text-red-500">{data.error}</p>}
+      {data?.error && <p className="text-red-400">{data.error}</p>}
     </div>
   );
 }
 
-// === Card raccomandazione ===
+// === RECOMMENDATION CARD ===
 function RecommendationCard({ rec, onChartClick }: { rec: any; onChartClick: () => void }) {
-  const actionColors: Record<string, string> = {
-    COMPRA: "border-l-green-500 bg-green-50 dark:bg-green-900/10",
-    ASPETTA: "border-l-yellow-500 bg-yellow-50 dark:bg-yellow-900/10",
-    VENDI: "border-l-red-500 bg-red-50 dark:bg-red-900/10",
-    TIENI: "border-l-gray-400",
+  const borderColors: Record<string, string> = {
+    COMPRA: "#22c55e", ASPETTA: "#eab308", VENDI: "#ef4444", TIENI: "#64748b",
   };
-
-  const riskColors: Record<string, string> = {
-    BASSO: "text-green-600 bg-green-100",
-    MEDIO: "text-yellow-600 bg-yellow-100",
-    ALTO: "text-red-600 bg-red-100",
+  const riskColors: Record<string, { bg: string; text: string }> = {
+    BASSO: { bg: "rgba(34,197,94,0.2)", text: "#22c55e" },
+    MEDIO: { bg: "rgba(234,179,8,0.2)", text: "#eab308" },
+    ALTO: { bg: "rgba(239,68,68,0.2)", text: "#ef4444" },
   };
 
   return (
-    <div className={`border-l-4 rounded-lg p-5 shadow ${actionColors[rec.action] || ""}`}>
+    <div className="rounded-xl p-5" style={{
+      background: "var(--surface)",
+      borderLeft: `4px solid ${borderColors[rec.action] || "#64748b"}`,
+      border: `1px solid var(--border)`,
+      borderLeftWidth: "4px",
+      borderLeftColor: borderColors[rec.action] || "#64748b",
+    }}>
       <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
         <div className="flex items-center gap-3">
-          <h4 className="text-xl font-bold">{rec.ticker}</h4>
-          <span className="text-sm text-gray-500">{rec.name}</span>
+          <h4 className="text-xl font-black" style={{ color: "var(--accent)" }}>{rec.ticker}</h4>
+          <span className="text-sm" style={{ color: "#94a3b8" }}>{rec.name}</span>
           <SignalBadge signal={rec.action} />
         </div>
         <div className="flex items-center gap-2">
           <button
             onClick={onChartClick}
-            className="px-2 py-1 rounded text-xs bg-blue-100 text-blue-700 hover:bg-blue-200 font-medium"
+            className="px-3 py-1 rounded-lg text-xs font-bold hover:brightness-110"
+            style={{ background: "var(--accent)", color: "#0f0e2a" }}
           >
             Grafico
           </button>
-          <span className={`px-2 py-0.5 rounded text-xs font-medium ${riskColors[rec.riskLevel] || ""}`}>
+          <span className="px-2 py-0.5 rounded text-xs font-bold" style={{
+            background: riskColors[rec.riskLevel]?.bg,
+            color: riskColors[rec.riskLevel]?.text,
+          }}>
             Rischio {rec.riskLevel}
           </span>
-          <span className="text-sm text-gray-500">Confidenza: {rec.confidence}%</span>
+          <span className="text-sm" style={{ color: "#94a3b8" }}>Confidenza: {rec.confidence}%</span>
         </div>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-4">
         <div>
-          <p className="text-xs text-gray-500">Prezzo attuale</p>
+          <p className="text-xs" style={{ color: "#94a3b8" }}>Prezzo attuale</p>
           <p className="text-lg font-bold">${rec.currentPrice}</p>
         </div>
         <div>
-          <p className="text-xs text-gray-500">Prezzo ingresso</p>
+          <p className="text-xs" style={{ color: "#94a3b8" }}>Prezzo ingresso</p>
           <p className="text-sm font-medium">{rec.entryPrice}</p>
         </div>
         <div>
-          <p className="text-xs text-gray-500">Target</p>
-          <p className="text-lg font-bold text-green-600">${rec.targetPrice}</p>
+          <p className="text-xs" style={{ color: "#94a3b8" }}>Target</p>
+          <p className="text-lg font-bold" style={{ color: "#22c55e" }}>${rec.targetPrice}</p>
         </div>
         <div>
-          <p className="text-xs text-gray-500">Stop Loss</p>
-          <p className="text-lg font-bold text-red-600">${rec.stopLoss}</p>
+          <p className="text-xs" style={{ color: "#94a3b8" }}>Stop Loss</p>
+          <p className="text-lg font-bold" style={{ color: "#ef4444" }}>${rec.stopLoss}</p>
         </div>
         <div>
-          <p className="text-xs text-gray-500">Guadagno atteso</p>
-          <p className={`text-lg font-bold ${rec.expectedReturn >= 0 ? "text-green-600" : "text-red-600"}`}>
+          <p className="text-xs" style={{ color: "#94a3b8" }}>Guadagno atteso</p>
+          <p className="text-lg font-bold" style={{ color: rec.expectedReturn >= 0 ? "#22c55e" : "#ef4444" }}>
             {rec.expectedReturn >= 0 ? "+" : ""}{rec.expectedReturn}%
           </p>
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3 text-sm">
-        <div className="bg-white/50 dark:bg-gray-800/50 rounded p-3">
-          <span className="text-gray-500">Quando entrare: </span>
+        <div className="rounded-lg p-3" style={{ background: "var(--surface-light)" }}>
+          <span style={{ color: "#94a3b8" }}>Quando entrare: </span>
           <span className="font-medium">{rec.timing}</span>
         </div>
-        <div className="bg-white/50 dark:bg-gray-800/50 rounded p-3">
-          <span className="text-gray-500">Per quanto tempo: </span>
+        <div className="rounded-lg p-3" style={{ background: "var(--surface-light)" }}>
+          <span style={{ color: "#94a3b8" }}>Per quanto tempo: </span>
           <span className="font-medium">{rec.holdingPeriod}</span>
         </div>
       </div>
 
       <div className="space-y-1">
-        <p className="text-xs font-medium text-gray-500">Perché:</p>
+        <p className="text-xs font-bold" style={{ color: "#94a3b8" }}>Perché:</p>
         {rec.reasons.map((r: string, i: number) => (
-          <p key={i} className="text-sm text-gray-600 dark:text-gray-300">• {r}</p>
+          <p key={i} className="text-sm" style={{ color: "#cbd5e1" }}>• {r}</p>
         ))}
       </div>
     </div>
   );
 }
 
-// === Utility ===
+// === UTILITY ===
 function LoadingSpinner({ text = "Caricamento..." }: { text?: string }) {
   return (
     <div className="flex items-center justify-center py-12">
-      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mr-3" />
-      <span className="text-gray-500">{text}</span>
+      <div className="animate-spin rounded-full h-8 w-8 border-b-2 mr-3" style={{ borderColor: "var(--accent)" }} />
+      <span style={{ color: "#94a3b8" }}>{text}</span>
     </div>
   );
 }
 
 function Stat({ label, value, color }: { label: string; value: any; color?: string }) {
-  const colorClass = color === "green" ? "text-green-600" : color === "red" ? "text-red-600" : "text-gray-800 dark:text-gray-200";
   return (
     <div>
-      <p className="text-xs text-gray-500">{label}</p>
-      <p className={`text-lg font-bold ${colorClass}`}>{value}</p>
+      <p className="text-xs" style={{ color: "#94a3b8" }}>{label}</p>
+      <p className="text-lg font-bold" style={{ color: color || "var(--foreground)" }}>{value}</p>
     </div>
   );
 }
 
-// Converte ticker Yahoo → TradingView
 function tvSymbol(ticker: string): string {
   if (ticker.endsWith(".MI")) return `MIL:${ticker.replace(".MI", "")}`;
   if (ticker.endsWith("-USD")) return `BITSTAMP:${ticker.replace("-USD", "")}USD`;
@@ -699,6 +741,6 @@ function tvSymbol(ticker: string): string {
   if (ticker === "USDCHF=X") return "FOREXCOM:USDCHF";
   if (ticker === "EURGBP=X") return "FOREXCOM:EURGBP";
   if (ticker === "EURJPY=X") return "FOREXCOM:EURJPY";
-  if (ticker.startsWith("^")) return ticker; // indices
+  if (ticker.startsWith("^")) return ticker;
   return `NASDAQ:${ticker}`;
 }

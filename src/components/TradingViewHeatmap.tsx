@@ -26,7 +26,7 @@ export default function TradingViewHeatmap({ exchange = "SPX500", height = 500 }
       blockColor: "change",
       locale: "it",
       symbolUrl: "",
-      colorTheme: "light",
+      colorTheme: "dark",
       hasTopBar: true,
       isDataSetEnabled: true,
       isZoomEnabled: true,

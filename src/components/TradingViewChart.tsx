@@ -23,7 +23,7 @@ export default function TradingViewChart({ symbol, height = 500 }: Props) {
       symbol: symbol,
       interval: "D",
       timezone: "Europe/Rome",
-      theme: "light",
+      theme: "dark",
       style: "1",
       locale: "it",
       allow_symbol_change: true,
