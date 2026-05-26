@@ -140,3 +140,19 @@ export async function getReportHistory(limit = 20): Promise<any[]> {
   );
   return data || [];
 }
+
+export async function getPredictionsForReport(reportId: string): Promise<any[]> {
+  const data = await supaFetch(
+    `predictions?report_id=eq.${reportId}&order=confidence.desc`,
+    { method: "GET" }
+  );
+  return data || [];
+}
+
+export async function getAllPredictions(limit = 100): Promise<any[]> {
+  const data = await supaFetch(
+    `predictions?order=created_at.desc&limit=${limit}&select=*`,
+    { method: "GET" }
+  );
+  return data || [];
+}

@@ -12,7 +12,7 @@ const TradingViewChart = dynamic(() => import("@/components/TradingViewChart"), 
 const TradingViewTicker = dynamic(() => import("@/components/TradingViewTicker"), { ssr: false });
 const TradingViewHeatmap = dynamic(() => import("@/components/TradingViewHeatmap"), { ssr: false });
 
-type Tab = "consulente" | "mercati" | "signals" | "news" | "volumes" | "analyze";
+type Tab = "consulente" | "storico" | "mercati" | "signals" | "news" | "volumes" | "analyze";
 
 const CATEGORIES = [
   "Top Azioni USA", "FTSE MIB", "Crypto", "ETF Settoriali",
@@ -53,6 +53,7 @@ export default function Home() {
           {(
             [
               ["consulente", "Il Mio Consulente"],
+              ["storico", "Storico & Verifica"],
               ["mercati", "Mercati & Grafici"],
               ["signals", "Tutti i Segnali"],
               ["news", "News & Sentiment"],
@@ -77,6 +78,7 @@ export default function Home() {
       </header>
 
       <main className="max-w-7xl mx-auto px-4 py-6">
+        {tab === "storico" && <StoricoTab />}
         {tab === "consulente" && <ConsulenteTab
           report={advisoryReport} setReport={setAdvisoryReport}
           reportLoading={advisoryLoading} setReportLoading={setAdvisoryLoading}
@@ -108,6 +110,226 @@ function Card({ children, className = "", highlight = false }: { children: React
       }}
     >
       {children}
+    </div>
+  );
+}
+
+// === STORICO & VERIFICA ===
+function StoricoTab() {
+  const [history, setHistory] = useState<any>(null);
+  const [verification, setVerification] = useState<any>(null);
+  const [loadingHistory, setLoadingHistory] = useState(false);
+  const [loadingVerify, setLoadingVerify] = useState(false);
+  const [expandedReport, setExpandedReport] = useState<string | null>(null);
+  const [reportPredictions, setReportPredictions] = useState<Record<string, any[]>>({});
+
+  const loadHistory = () => {
+    setLoadingHistory(true);
+    fetch("/api/history")
+      .then(r => r.json())
+      .then(d => { setHistory(d); setLoadingHistory(false); })
+      .catch(() => setLoadingHistory(false));
+  };
+
+  const verify = () => {
+    setLoadingVerify(true);
+    fetch("/api/verify")
+      .then(r => r.json())
+      .then(d => { setVerification(d); setLoadingVerify(false); })
+      .catch(() => setLoadingVerify(false));
+  };
+
+  const toggleReport = async (reportId: string) => {
+    if (expandedReport === reportId) {
+      setExpandedReport(null);
+      return;
+    }
+    setExpandedReport(reportId);
+    if (!reportPredictions[reportId]) {
+      try {
+        const res = await fetch(`/api/history?reportId=${reportId}`);
+        const data = await res.json();
+        if (data.predictions) {
+          setReportPredictions(prev => ({ ...prev, [reportId]: data.predictions }));
+        }
+      } catch {}
+    }
+  };
+
+  useEffect(() => { loadHistory(); }, []);
+
+  return (
+    <div className="space-y-6">
+      <Card highlight>
+        <h2 className="text-2xl font-black mb-2" style={{ color: "var(--accent)" }}>Storico Analisi & Verifica Previsioni</h2>
+        <p className="text-sm mb-4" style={{ color: "#94a3b8" }}>
+          Tutte le analisi che hai generato. Il sistema confronta le previsioni passate con i prezzi reali per capire cosa ha funzionato e cosa no.
+        </p>
+        <div className="flex gap-3 flex-wrap">
+          <button
+            onClick={loadHistory}
+            disabled={loadingHistory}
+            className="px-5 py-2.5 rounded-lg font-bold text-sm transition-all disabled:opacity-50 hover:brightness-110"
+            style={{ background: "var(--accent)", color: "#08091a" }}
+          >
+            {loadingHistory ? "Caricamento..." : "Aggiorna Storico"}
+          </button>
+          <button
+            onClick={verify}
+            disabled={loadingVerify}
+            className="px-5 py-2.5 rounded-lg font-bold text-sm transition-all disabled:opacity-50 hover:brightness-110"
+            style={{ background: "var(--surface-light)", color: "var(--accent)", border: "1px solid var(--accent)" }}
+          >
+            {loadingVerify ? "Verifica in corso..." : "Verifica Previsioni con AI"}
+          </button>
+        </div>
+      </Card>
+
+      {/* Accuratezza globale */}
+      {history?.accuracy && history.accuracy.total > 0 && (
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+          <Card>
+            <p className="text-xs" style={{ color: "#94a3b8" }}>Previsioni totali</p>
+            <p className="text-2xl font-black">{history.accuracy.total}</p>
+          </Card>
+          <Card>
+            <p className="text-xs" style={{ color: "#94a3b8" }}>Corrette</p>
+            <p className="text-2xl font-black" style={{ color: "#22c55e" }}>{history.accuracy.correct}</p>
+          </Card>
+          <Card>
+            <p className="text-xs" style={{ color: "#94a3b8" }}>Errate</p>
+            <p className="text-2xl font-black" style={{ color: "#ef4444" }}>{history.accuracy.wrong}</p>
+          </Card>
+          <Card>
+            <p className="text-xs" style={{ color: "#94a3b8" }}>Accuratezza</p>
+            <p className="text-2xl font-black" style={{ color: history.accuracy.accuracy >= 60 ? "#22c55e" : history.accuracy.accuracy >= 40 ? "#eab308" : "#ef4444" }}>
+              {history.accuracy.accuracy}%
+            </p>
+          </Card>
+          <Card>
+            <p className="text-xs" style={{ color: "#94a3b8" }}>Rendimento medio</p>
+            <p className="text-2xl font-black" style={{ color: history.accuracy.avgReturn >= 0 ? "#22c55e" : "#ef4444" }}>
+              {history.accuracy.avgReturn >= 0 ? "+" : ""}{history.accuracy.avgReturn}%
+            </p>
+          </Card>
+        </div>
+      )}
+
+      {/* AI Verifica */}
+      {verification?.aiAnalysis && (
+        <div className="rounded-xl p-6" style={{ background: "linear-gradient(135deg, #0f1129 0%, #1a1050 50%, #0f1129 100%)", border: "1px solid var(--accent)" }}>
+          <div className="flex items-center gap-2 mb-3">
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center text-sm font-black" style={{ background: "var(--accent)", color: "#08091a" }}>AI</div>
+            <h3 className="text-lg font-black" style={{ color: "var(--accent)" }}>Analisi AI delle Performance</h3>
+          </div>
+          <div className="text-sm leading-relaxed whitespace-pre-line" style={{ color: "#cbd5e1" }}>{verification.aiAnalysis}</div>
+        </div>
+      )}
+
+      {/* Risultati verifica */}
+      {verification?.results && verification.results.length > 0 && (
+        <Card>
+          <h3 className="font-bold mb-3" style={{ color: "var(--accent)" }}>Previsioni Verificate ({verification.verified})</h3>
+          <div className="rounded-xl overflow-x-auto" style={{ border: "1px solid var(--border)" }}>
+            <table className="w-full text-sm">
+              <thead>
+                <tr style={{ background: "var(--surface-light)" }}>
+                  {["Ticker", "Azione", "Prezzo pred.", "Prezzo ora", "Rendimento", "Esito", "Data"].map(h => (
+                    <th key={h} className="px-3 py-2 text-left text-xs font-bold" style={{ color: "#94a3b8" }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {verification.results.map((r: any, i: number) => (
+                  <tr key={i} style={{ borderBottom: "1px solid var(--border)", background: r.correct ? "rgba(34,197,94,0.05)" : "rgba(239,68,68,0.05)" }}>
+                    <td className="px-3 py-2 font-bold">{r.ticker}</td>
+                    <td className="px-3 py-2"><SignalBadge signal={r.action} /></td>
+                    <td className="px-3 py-2">${r.priceAtPrediction}</td>
+                    <td className="px-3 py-2">${r.currentPrice}</td>
+                    <td className="px-3 py-2 font-bold" style={{ color: r.actualReturn >= 0 ? "#22c55e" : "#ef4444" }}>
+                      {r.actualReturn >= 0 ? "+" : ""}{r.actualReturn}%
+                    </td>
+                    <td className="px-3 py-2">
+                      <span className="px-2 py-0.5 rounded text-xs font-bold" style={{
+                        background: r.correct ? "rgba(34,197,94,0.2)" : "rgba(239,68,68,0.2)",
+                        color: r.correct ? "#22c55e" : "#ef4444",
+                      }}>
+                        {r.correct ? "CORRETTA" : "ERRATA"}
+                      </span>
+                    </td>
+                    <td className="px-3 py-2 text-xs" style={{ color: "#475569" }}>
+                      {new Date(r.predictedAt).toLocaleDateString("it-IT")}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+      )}
+
+      {/* Lista report storici */}
+      {history?.reports && history.reports.length > 0 && (
+        <Card>
+          <h3 className="font-bold mb-3" style={{ color: "var(--accent)" }}>Report Generati ({history.reports.length})</h3>
+          <div className="space-y-3">
+            {history.reports.map((r: any) => (
+              <div
+                key={r.id}
+                className="rounded-lg p-4 cursor-pointer transition-all hover:brightness-110"
+                style={{ background: "var(--surface-light)", border: "1px solid var(--border)" }}
+                onClick={() => toggleReport(r.id)}
+              >
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm font-bold">{new Date(r.created_at).toLocaleString("it-IT")}</span>
+                    <span className="px-2 py-0.5 rounded text-xs font-bold" style={{
+                      background: r.sentiment === "BULLISH" ? "rgba(34,197,94,0.2)" : r.sentiment === "BEARISH" ? "rgba(239,68,68,0.2)" : "rgba(234,179,8,0.2)",
+                      color: r.sentiment === "BULLISH" ? "#22c55e" : r.sentiment === "BEARISH" ? "#ef4444" : "#eab308",
+                    }}>
+                      {r.sentiment}
+                    </span>
+                    {r.fear_greed_score > 0 && (
+                      <span className="text-xs" style={{ color: "#94a3b8" }}>F&G: {r.fear_greed_score}</span>
+                    )}
+                    {r.vix > 0 && (
+                      <span className="text-xs" style={{ color: "#94a3b8" }}>VIX: {Number(r.vix).toFixed(1)}</span>
+                    )}
+                  </div>
+                  <span className="text-xs" style={{ color: "var(--accent)" }}>
+                    {expandedReport === r.id ? "Chiudi" : "Dettagli"}
+                  </span>
+                </div>
+                {r.market_condition && (
+                  <p className="text-xs mt-1" style={{ color: "#94a3b8" }}>{r.market_condition}</p>
+                )}
+
+                {/* Espansione */}
+                {expandedReport === r.id && (
+                  <div className="mt-3 pt-3" style={{ borderTop: "1px solid var(--border)" }}>
+                    {r.summary && <p className="text-sm mb-2">{r.summary}</p>}
+                    {r.ai_briefing && (
+                      <div className="text-xs whitespace-pre-line mt-2 p-3 rounded-lg" style={{ background: "var(--surface)", color: "#94a3b8" }}>
+                        {r.ai_briefing}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
+
+      {history?.reports?.length === 0 && !loadingHistory && (
+        <Card>
+          <p className="text-center py-8" style={{ color: "#94a3b8" }}>
+            Nessun report nello storico. Vai su "Il Mio Consulente" e genera la tua prima analisi!
+          </p>
+        </Card>
+      )}
+
+      {loadingHistory && <LoadingSpinner text="Caricamento storico..." />}
     </div>
   );
 }
