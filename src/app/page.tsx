@@ -20,6 +20,11 @@ const CATEGORIES = [
 
 export default function Home() {
   const [tab, setTab] = useState<Tab>("advisory");
+  // Stato condiviso — persiste quando cambi tab
+  const [advisoryReport, setAdvisoryReport] = useState<any>(null);
+  const [advisoryLoading, setAdvisoryLoading] = useState(false);
+  const [newsData, setNewsData] = useState<any>(null);
+  const [signalsData, setSignalsData] = useState<any[]>([]);
 
   return (
     <div className="min-h-screen" style={{ background: "var(--background)", color: "var(--foreground)" }}>
@@ -69,10 +74,10 @@ export default function Home() {
       </header>
 
       <main className="max-w-7xl mx-auto px-4 py-6">
-        {tab === "advisory" && <AdvisoryTab />}
+        {tab === "advisory" && <AdvisoryTab report={advisoryReport} setReport={setAdvisoryReport} loading={advisoryLoading} setLoading={setAdvisoryLoading} />}
         {tab === "mercati" && <MercatiTab />}
-        {tab === "signals" && <SignalsTab />}
-        {tab === "news" && <NewsTab />}
+        {tab === "signals" && <SignalsTab data={signalsData} setData={setSignalsData} />}
+        {tab === "news" && <NewsTab data={newsData} setData={setNewsData} />}
         {tab === "volumes" && <VolumesTab />}
         {tab === "analyze" && <AnalyzeTab />}
       </main>
@@ -100,9 +105,7 @@ function Card({ children, className = "", highlight = false }: { children: React
 }
 
 // === ADVISORY ===
-function AdvisoryTab() {
-  const [report, setReport] = useState<any>(null);
-  const [loading, setLoading] = useState(false);
+function AdvisoryTab({ report, setReport, loading, setLoading }: { report: any; setReport: (r: any) => void; loading: boolean; setLoading: (l: boolean) => void }) {
   const [error, setError] = useState("");
   const [selectedTicker, setSelectedTicker] = useState<string | null>(null);
 
@@ -135,8 +138,12 @@ function AdvisoryTab() {
           className="px-6 py-3 rounded-lg font-bold text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:brightness-110"
           style={{ background: "var(--accent)", color: "#0f0e2a" }}
         >
-          {loading ? "Analisi in corso... (1-2 minuti)" : "Genera Raccomandazioni"}
+          {loading ? "Analisi in corso... (1-2 minuti)" : report ? "Aggiorna Raccomandazioni" : "Genera Raccomandazioni"}
         </button>
+        <div className="mt-4 p-3 rounded-lg text-xs" style={{ background: "var(--surface-light)", color: "#94a3b8" }}>
+          <strong style={{ color: "var(--accent)" }}>Quando analizzare:</strong>
+          <span className="ml-1">08:00-09:00 (prima di Milano) | 14:00-15:00 (prima di Wall Street) | Crypto: sempre</span>
+        </div>
         {error && <p className="text-red-400 mt-2">{error}</p>}
       </Card>
 
@@ -349,11 +356,11 @@ function MercatiTab() {
 }
 
 // === SIGNALS ===
-function SignalsTab() {
-  const [signals, setSignals] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+function SignalsTab({ data: signals, setData: setSignals }: { data: any[]; setData: (d: any[]) => void }) {
+  const [loading, setLoading] = useState(signals.length === 0);
 
   useEffect(() => {
+    if (signals.length > 0) return; // già caricati
     fetch("/api/signals")
       .then(r => r.json())
       .then(data => { setSignals(data); setLoading(false); })
@@ -402,12 +409,12 @@ function SignalsTab() {
 }
 
 // === NEWS ===
-function NewsTab() {
-  const [newsData, setNewsData] = useState<any>(null);
+function NewsTab({ data: newsData, setData: setNewsData }: { data: any; setData: (d: any) => void }) {
   const [filter, setFilter] = useState("Tutti");
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!newsData);
 
   useEffect(() => {
+    if (newsData) return; // già caricato
     fetch("/api/news")
       .then(r => r.json())
       .then(data => { setNewsData(data); setLoading(false); })
