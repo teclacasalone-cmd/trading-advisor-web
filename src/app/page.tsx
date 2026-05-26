@@ -122,7 +122,7 @@ function ConsulenteTab({
 }) {
   const [error, setError] = useState("");
   const [selectedTicker, setSelectedTicker] = useState<string | null>(null);
-  const [section, setSection] = useState<"analysis" | "strategy">("strategy");
+  const [maxPrice, setMaxPrice] = useState(0); // 0 = mostra tutto
   const loading = reportLoading || strategyLoading;
 
   const generateReport = () => {
@@ -283,29 +283,38 @@ function ConsulenteTab({
             </Card>
           )}
 
-          {/* COMPRA — nel tuo budget */}
+          {/* Filtro prezzo */}
+          <div className="flex items-center gap-3 flex-wrap">
+            <span className="text-sm font-bold" style={{ color: "#94a3b8" }}>Filtra per prezzo max:</span>
+            {[0, 20, 50, 100, 200, 500].map(p => (
+              <button
+                key={p}
+                onClick={() => setMaxPrice(p)}
+                className="px-3 py-1 rounded-lg text-xs font-bold transition-all"
+                style={{
+                  background: maxPrice === p ? "var(--accent)" : "var(--surface-light)",
+                  color: maxPrice === p ? "#08091a" : "#94a3b8",
+                  border: `1px solid ${maxPrice === p ? "var(--accent)" : "var(--border)"}`,
+                }}
+              >
+                {p === 0 ? "Tutti" : `< €${p}`}
+              </button>
+            ))}
+          </div>
+
+          {/* COMPRA */}
           <RecSection
-            title="COMPRA — Nel tuo budget (max €100)"
-            color="var(--accent)"
-            recs={report.recommendations.filter((r: any) => r.action === "COMPRA" && r.affordable)}
+            title="COMPRA"
+            color="#22c55e"
+            recs={report.recommendations.filter((r: any) => r.action === "COMPRA" && (maxPrice === 0 || r.currentPrice <= maxPrice))}
             onSelect={setSelectedTicker}
           />
 
-          {/* COMPRA — fuori budget */}
-          {report.recommendations.filter((r: any) => r.action === "COMPRA" && !r.affordable).length > 0 && (
-            <RecSection
-              title="COMPRA — Sopra budget (per info)"
-              color="#22c55e"
-              recs={report.recommendations.filter((r: any) => r.action === "COMPRA" && !r.affordable)}
-              onSelect={setSelectedTicker}
-            />
-          )}
-
-          {/* ASPETTA — nel budget */}
+          {/* ASPETTA */}
           <RecSection
-            title="ASPETTA — Da monitorare (max €100)"
+            title="ASPETTA — Da monitorare"
             color="#eab308"
-            recs={report.recommendations.filter((r: any) => r.action === "ASPETTA" && r.affordable)}
+            recs={report.recommendations.filter((r: any) => r.action === "ASPETTA" && (maxPrice === 0 || r.currentPrice <= maxPrice))}
             onSelect={setSelectedTicker}
           />
 
