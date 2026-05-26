@@ -33,6 +33,7 @@ export interface AdvisoryReport {
   aiBriefing: string;
   aiNewsAnalysis: string;
   maxBudget: number;
+  vix: number;
 }
 
 // Supporto e resistenza semplificati
@@ -269,6 +270,10 @@ export async function generateFullReport(): Promise<AdvisoryReport> {
   const sentimentData = summarizeSentiment(newsItems);
   const marketSentiment = sentimentData.overall;
 
+  // VIX
+  const vixQuotes = await getQuotes(["^VIX"]);
+  const vix = vixQuotes.length > 0 ? vixQuotes[0].price : 0;
+
   // 2. Analisi di tutti i ticker — priorità ad asset accessibili (< €100)
   const allTickersSet = new Set([
     ...WATCHLIST["Azioni Accessibili"],  // priorità
@@ -331,18 +336,19 @@ export async function generateFullReport(): Promise<AdvisoryReport> {
         : `${q.changePct.toFixed(1)}% oggi, possibile debolezza`,
     }));
 
-  // 4. Market condition summary
+  // 4. Market condition summary (include VIX)
   let marketCondition = "NEUTRO";
+  const vixLabel = vix > 25 ? " | VIX alto: mercato nervoso" : vix > 0 && vix < 15 ? " | VIX basso: mercato tranquillo" : "";
   if (fearGreed.score > 60 && marketSentiment === "BULLISH") {
-    marketCondition = "RIALZISTA — Buon momento per posizionarsi";
+    marketCondition = "RIALZISTA — Buon momento per posizionarsi" + vixLabel;
   } else if (fearGreed.score < 35 && marketSentiment === "BEARISH") {
-    marketCondition = "RIBASSISTA — Cautela, ma possibili opportunità contrarian";
+    marketCondition = "RIBASSISTA — Cautela, ma possibili opportunità contrarian" + vixLabel;
   } else if (fearGreed.score < 25) {
-    marketCondition = "PANICO — Storicamente ottimo per acquisti di lungo periodo";
+    marketCondition = "PANICO — Storicamente ottimo per acquisti di lungo periodo" + vixLabel;
   } else if (fearGreed.score > 75) {
-    marketCondition = "EUFORIA — Attenzione, possibile correzione in arrivo";
+    marketCondition = "EUFORIA — Attenzione, possibile correzione in arrivo" + vixLabel;
   } else {
-    marketCondition = "STABILE — Selezionare singoli titoli con segnali forti";
+    marketCondition = "STABILE — Selezionare singoli titoli con segnali forti" + vixLabel;
   }
 
   // 5. Summary
@@ -389,5 +395,6 @@ export async function generateFullReport(): Promise<AdvisoryReport> {
     aiBriefing,
     aiNewsAnalysis,
     maxBudget: 100,
+    vix,
   };
 }

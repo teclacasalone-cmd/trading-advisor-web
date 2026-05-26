@@ -160,8 +160,25 @@ function AdvisoryTab({ report, setReport, loading, setLoading }: { report: any; 
       {report && !loading && (
         <>
           {/* Market overview */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <FearGreedGauge score={report.fearGreed.score} rating={report.fearGreed.rating} />
+            {report.vix > 0 && (
+              <Card>
+                <h3 className="text-xs font-bold mb-1" style={{ color: "#94a3b8" }}>VIX — Indice della Paura</h3>
+                <div className="text-3xl font-black" style={{
+                  color: report.vix > 25 ? "#ef4444" : report.vix > 20 ? "#f97316" : report.vix < 15 ? "#22c55e" : "#eab308"
+                }}>
+                  {report.vix.toFixed(1)}
+                </div>
+                <p className="text-xs mt-1" style={{ color: "#94a3b8" }}>
+                  {report.vix > 30 ? "Panico — alta volatilità" :
+                   report.vix > 25 ? "Mercato nervoso — cautela" :
+                   report.vix > 20 ? "Volatilità moderata" :
+                   report.vix < 15 ? "Mercato tranquillo — bassa volatilità" :
+                   "Volatilità nella norma"}
+                </p>
+              </Card>
+            )}
             <Card>
               <h3 className="text-xs font-medium mb-1" style={{ color: "#94a3b8" }}>Condizione Mercato</h3>
               <p className="text-lg font-bold" style={{ color: "var(--accent)" }}>{report.marketCondition}</p>
@@ -505,7 +522,7 @@ function VolumesTab() {
           <table className="w-full text-sm">
             <thead>
               <tr style={{ background: "var(--surface-light)" }}>
-                {["Ticker", "Nome", "Prezzo", "Variazione %", "Volume", "Vol vs Media", "Segnale"].map(h => (
+                {["Ticker", "Nome", "Prezzo", "Variazione %", "Volume", "Vol vs Media", "Interpretazione"].map(h => (
                   <th key={h} className="px-4 py-3 text-left text-xs font-bold" style={{ color: "#94a3b8" }}>{h}</th>
                 ))}
               </tr>
@@ -526,11 +543,17 @@ function VolumesTab() {
                   <td className="px-4 py-3 font-bold" style={{ color: q.volRatio >= 1.5 ? "var(--accent)" : "inherit" }}>
                     {q.volRatio}x
                   </td>
-                  <td className="px-4 py-3">
+                  <td className="px-4 py-3 text-xs">
                     {q.volRatio >= 1.5 ? (
-                      <span className="px-2 py-0.5 rounded text-xs font-bold" style={{ background: "var(--accent)", color: "#0f0e2a" }}>ANOMALO</span>
+                      q.changePct > 0 ? (
+                        <span className="px-2 py-0.5 rounded font-bold" style={{ background: "rgba(34,197,94,0.2)", color: "#22c55e" }}>Trend forte confermato</span>
+                      ) : (
+                        <span className="px-2 py-0.5 rounded font-bold" style={{ background: "rgba(239,68,68,0.2)", color: "#ef4444" }}>Vendite convinte</span>
+                      )
+                    ) : q.volRatio >= 1.2 ? (
+                      <span className="px-2 py-0.5 rounded font-bold" style={{ background: "rgba(91,138,245,0.2)", color: "#5b8af5" }}>Interesse crescente</span>
                     ) : (
-                      <span className="text-xs" style={{ color: "#475569" }}>Normale</span>
+                      <span style={{ color: "#475569" }}>Normale</span>
                     )}
                   </td>
                 </tr>

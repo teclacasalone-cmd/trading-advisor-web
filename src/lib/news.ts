@@ -66,11 +66,16 @@ const NEGATIVE_WORDS_IT = new Set([
 ]);
 
 const RSS_FEEDS: Record<string, string> = {
+  // Italiane
   "Il Sole 24 Ore": "https://www.ilsole24ore.com/rss/finanza.xml",
   "Il Sole 24 Ore Mercati": "https://www.ilsole24ore.com/rss/finanza--mercati.xml",
+  "Milano Finanza": "https://www.milanofinanza.it/rss/",
+  "ANSA Economia": "https://www.ansa.it/sito/notizie/economia/economia_rss.xml",
+  // Internazionali
   "Yahoo Finance": "https://finance.yahoo.com/news/rssindex",
   "MarketWatch": "https://feeds.marketwatch.com/marketwatch/topstories/",
   "CNBC": "https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=100003114",
+  "Investing.com": "https://www.investing.com/rss/news.rss",
 };
 
 export async function fetchNews(): Promise<NewsItem[]> {

@@ -307,7 +307,7 @@ export async function getAnalystData(ticker: string): Promise<AnalystData | null
 }
 
 export const WATCHLIST: Record<string, string[]> = {
-  "Indici Mondiali": ["^GSPC", "^DJI", "^IXIC", "^STOXX50E", "^FTSE", "^GDAXI", "^FCHI", "FTSEMIB.MI", "^N225", "^HSI"],
+  "Indici Mondiali": ["^GSPC", "^DJI", "^IXIC", "^STOXX50E", "^FTSE", "^GDAXI", "^FCHI", "FTSEMIB.MI", "^N225", "^HSI", "^VIX"],
   "FTSE MIB": [
     "ISP.MI", "UCG.MI", "ENI.MI", "ENEL.MI", "STLAM.MI", "RACE.MI",
     "G.MI", "MB.MI", "BAMI.MI", "TIT.MI", "PRY.MI", "SRG.MI",
@@ -360,7 +360,7 @@ export const ASSET_NAMES: Record<string, string> = {
   // Indici
   "^GSPC": "S&P 500", "^DJI": "Dow Jones", "^IXIC": "Nasdaq", "^STOXX50E": "Euro Stoxx 50",
   "^FTSE": "FTSE 100", "^GDAXI": "DAX", "^FCHI": "CAC 40", "FTSEMIB.MI": "FTSE MIB",
-  "^N225": "Nikkei 225", "^HSI": "Hang Seng",
+  "^N225": "Nikkei 225", "^HSI": "Hang Seng", "^VIX": "VIX (Volatilità)",
 };
 
 // Backward compat
