@@ -206,19 +206,29 @@ function AdvisoryTab({ report, setReport, loading, setLoading }: { report: any; 
             </Card>
           )}
 
-          {/* COMPRA */}
+          {/* COMPRA — nel tuo budget */}
           <RecSection
-            title="COMPRA — Opportunità identificate"
-            color="#22c55e"
-            recs={report.recommendations.filter((r: any) => r.action === "COMPRA")}
+            title="COMPRA — Nel tuo budget (max €100)"
+            color="#c5f82a"
+            recs={report.recommendations.filter((r: any) => r.action === "COMPRA" && r.affordable)}
             onSelect={setSelectedTicker}
           />
 
-          {/* ASPETTA */}
+          {/* COMPRA — fuori budget */}
+          {report.recommendations.filter((r: any) => r.action === "COMPRA" && !r.affordable).length > 0 && (
+            <RecSection
+              title="COMPRA — Sopra budget (per info)"
+              color="#22c55e"
+              recs={report.recommendations.filter((r: any) => r.action === "COMPRA" && !r.affordable)}
+              onSelect={setSelectedTicker}
+            />
+          )}
+
+          {/* ASPETTA — nel budget */}
           <RecSection
-            title="ASPETTA — Monitorare per ingresso"
+            title="ASPETTA — Da monitorare (max €100)"
             color="#eab308"
-            recs={report.recommendations.filter((r: any) => r.action === "ASPETTA")}
+            recs={report.recommendations.filter((r: any) => r.action === "ASPETTA" && r.affordable)}
             onSelect={setSelectedTicker}
           />
 
@@ -649,6 +659,11 @@ function RecommendationCard({ rec, onChartClick }: { rec: any; onChartClick: () 
           <h4 className="text-xl font-black" style={{ color: "var(--accent)" }}>{rec.ticker}</h4>
           <span className="text-sm" style={{ color: "#94a3b8" }}>{rec.name}</span>
           <SignalBadge signal={rec.action} />
+          {rec.affordable && (
+            <span className="px-2 py-0.5 rounded text-xs font-bold" style={{ background: "rgba(197,248,42,0.2)", color: "var(--accent)" }}>
+              Nel budget
+            </span>
+          )}
         </div>
         <div className="flex items-center gap-2">
           <button

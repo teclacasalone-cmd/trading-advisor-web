@@ -17,6 +17,7 @@ export interface Recommendation {
   reasons: string[];
   timing: string;
   sector: string;
+  affordable: boolean; // sotto il budget dell'utente
 }
 
 export interface AdvisoryReport {
@@ -30,6 +31,7 @@ export interface AdvisoryReport {
   summary: string;
   aiBriefing: string;
   aiNewsAnalysis: string;
+  maxBudget: number;
 }
 
 // Supporto e resistenza semplificati
@@ -230,6 +232,7 @@ function generateRecommendation(
     reasons,
     timing,
     sector: ASSET_NAMES[ticker] || "",
+    affordable: price <= 100,
   };
 }
 
@@ -243,15 +246,17 @@ export async function generateFullReport(): Promise<AdvisoryReport> {
   const sentimentData = summarizeSentiment(newsItems);
   const marketSentiment = sentimentData.overall;
 
-  // 2. Analisi di tutti i ticker (tutti i mercati)
-  const allTickers = [
-    ...WATCHLIST["Top Azioni USA"],
+  // 2. Analisi di tutti i ticker — priorità ad asset accessibili (< €100)
+  const allTickersSet = new Set([
+    ...WATCHLIST["Azioni Accessibili"],  // priorità
     ...WATCHLIST["FTSE MIB"],
+    ...WATCHLIST["Top Azioni USA"],
     ...WATCHLIST["Crypto"],
     ...WATCHLIST["ETF Settoriali"],
     ...WATCHLIST["Commodities"],
     ...WATCHLIST["Forex"],
-  ];
+  ]);
+  const allTickers = Array.from(allTickersSet);
   const quotes = await getQuotes(allTickers);
   const quoteMap = new Map(quotes.map(q => [q.ticker, q]));
 
@@ -359,5 +364,6 @@ export async function generateFullReport(): Promise<AdvisoryReport> {
     summary,
     aiBriefing,
     aiNewsAnalysis,
+    maxBudget: 100,
   };
 }

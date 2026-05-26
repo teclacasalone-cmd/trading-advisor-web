@@ -273,9 +273,19 @@ export const WATCHLIST: Record<string, string[]> = {
     "G.MI", "MB.MI", "BAMI.MI", "TIT.MI", "PRY.MI", "SRG.MI",
     "CPR.MI", "LDO.MI", "A2A.MI", "HER.MI",
   ],
+  "Azioni Accessibili": [
+    // USA sotto $100
+    "F", "BAC", "INTC", "PLTR", "SNAP", "SOFI", "NIO", "RIVN",
+    "T", "PFE", "CSCO", "KO", "PEP", "MRK", "ABBV", "PYPL",
+    // Italia sotto €100 (la maggior parte del FTSE MIB)
+    "ISP.MI", "ENI.MI", "ENEL.MI", "STLAM.MI", "BAMI.MI", "TIT.MI",
+    "A2A.MI", "HER.MI", "LDO.MI", "SRG.MI",
+    // ETF economici
+    "VWCE.DE", "IWDA.AS", "SPY5.DE",
+  ],
   "Top Azioni USA": ["AAPL", "MSFT", "GOOGL", "AMZN", "NVDA", "META", "TSLA", "JPM", "V", "JNJ", "WMT", "PG", "UNH", "HD", "DIS"],
   "ETF Settoriali": ["XLK", "XLF", "XLE", "XLV", "XLI", "XLY", "XLP", "XLU", "XLRE", "XLC", "XLB"],
-  "Crypto": ["BTC-USD", "ETH-USD", "SOL-USD", "XRP-USD", "ADA-USD", "DOGE-USD", "AVAX-USD", "DOT-USD"],
+  "Crypto": ["BTC-USD", "ETH-USD", "SOL-USD", "XRP-USD", "ADA-USD", "DOGE-USD", "AVAX-USD", "DOT-USD", "LINK-USD", "MATIC-USD"],
   "Commodities": ["GC=F", "SI=F", "CL=F", "NG=F", "HG=F", "PL=F"],
   "Forex": ["EURUSD=X", "GBPUSD=X", "USDJPY=X", "USDCHF=X", "EURGBP=X", "EURJPY=X"],
   "Obbligazioni": ["^TNX", "^TYX", "^FVX", "^IRX"],
@@ -286,6 +296,13 @@ export const ASSET_NAMES: Record<string, string> = {
   XLK: "Technology", XLF: "Financial", XLE: "Energy", XLV: "Healthcare",
   XLI: "Industrial", XLY: "Consumer Discr.", XLP: "Consumer Staples",
   XLU: "Utilities", XLRE: "Real Estate", XLC: "Communication", XLB: "Materials",
+  // Azioni accessibili USA
+  F: "Ford", BAC: "Bank of America", INTC: "Intel", PLTR: "Palantir",
+  SNAP: "Snap", SOFI: "SoFi", NIO: "NIO", RIVN: "Rivian",
+  T: "AT&T", PFE: "Pfizer", CSCO: "Cisco", KO: "Coca-Cola",
+  PEP: "PepsiCo", MRK: "Merck", ABBV: "AbbVie", PYPL: "PayPal",
+  // ETF europei
+  "VWCE.DE": "Vanguard FTSE All-World", "IWDA.AS": "iShares MSCI World", "SPY5.DE": "SPDR S&P 500 EUR",
   // FTSE MIB
   "ISP.MI": "Intesa Sanpaolo", "UCG.MI": "UniCredit", "ENI.MI": "ENI",
   "ENEL.MI": "Enel", "STLAM.MI": "Stellantis", "RACE.MI": "Ferrari",
