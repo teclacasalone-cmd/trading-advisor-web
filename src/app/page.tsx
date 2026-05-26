@@ -42,7 +42,7 @@ export default function Home() {
           </div>
           {/* Decorative globe hint */}
           <div className="hidden md:block w-16 h-16 rounded-full opacity-30" style={{
-            background: "radial-gradient(circle at 30% 30%, #c5f82a, #06b6d4, #0f0e2a)",
+            background: "radial-gradient(circle at 30% 30%, #5b8af5, #7c3aed, #08091a)",
             border: "1px solid rgba(255,255,255,0.1)",
           }} />
         </div>
@@ -183,7 +183,7 @@ function AdvisoryTab({ report, setReport, loading, setLoading }: { report: any; 
           {/* AI Briefing */}
           {report.aiBriefing && (
             <div className="rounded-xl p-6" style={{
-              background: "linear-gradient(135deg, #1a1845 0%, #0f2a1a 50%, #1a1845 100%)",
+              background: "linear-gradient(135deg, #0f1129 0%, #1a1050 50%, #0f1129 100%)",
               border: "1px solid var(--accent)",
             }}>
               <div className="flex items-center gap-2 mb-3">
@@ -209,7 +209,7 @@ function AdvisoryTab({ report, setReport, loading, setLoading }: { report: any; 
           {/* COMPRA — nel tuo budget */}
           <RecSection
             title="COMPRA — Nel tuo budget (max €100)"
-            color="#c5f82a"
+            color="var(--accent)"
             recs={report.recommendations.filter((r: any) => r.action === "COMPRA" && r.affordable)}
             onSelect={setSelectedTicker}
           />
@@ -660,7 +660,7 @@ function RecommendationCard({ rec, onChartClick }: { rec: any; onChartClick: () 
           <span className="text-sm" style={{ color: "#94a3b8" }}>{rec.name}</span>
           <SignalBadge signal={rec.action} />
           {rec.affordable && (
-            <span className="px-2 py-0.5 rounded text-xs font-bold" style={{ background: "rgba(197,248,42,0.2)", color: "var(--accent)" }}>
+            <span className="px-2 py-0.5 rounded text-xs font-bold" style={{ background: "rgba(91,138,245,0.2)", color: "#7ba4ff" }}>
               Nel budget
             </span>
           )}

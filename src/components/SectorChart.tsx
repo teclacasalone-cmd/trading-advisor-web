@@ -15,11 +15,11 @@ export default function SectorChart({ data }: { data: SectorData[] }) {
         <YAxis type="category" dataKey="sector" width={100} tick={{ fill: "#94a3b8", fontSize: 12 }} />
         <Tooltip
           formatter={(v) => `${Number(v).toFixed(2)}%`}
-          contentStyle={{ background: "#1a1845", border: "1px solid #2d2a5e", borderRadius: 8, color: "#e2e8f0" }}
+          contentStyle={{ background: "#0f1129", border: "1px solid #1e2350", borderRadius: 8, color: "#e2e8f0" }}
         />
         <Bar dataKey="changePct">
           {data.map((entry, i) => (
-            <Cell key={i} fill={entry.changePct >= 0 ? "#c5f82a" : "#ef4444"} />
+            <Cell key={i} fill={entry.changePct >= 0 ? "#5b8af5" : "#ef4444"} />
           ))}
         </Bar>
       </BarChart>
