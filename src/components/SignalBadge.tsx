@@ -3,8 +3,12 @@
 const SIGNAL_COLORS: Record<string, string> = {
   "FORTE ACQUISTO": "bg-green-600 text-white",
   "ACQUISTO": "bg-green-400 text-white",
+  "COMPRA": "bg-green-600 text-white",
+  "ASPETTA": "bg-yellow-500 text-white",
+  "TIENI": "bg-blue-400 text-white",
   "NEUTRO": "bg-gray-400 text-white",
   "VENDITA": "bg-red-400 text-white",
+  "VENDI": "bg-red-500 text-white",
   "FORTE VENDITA": "bg-red-600 text-white",
 };
 

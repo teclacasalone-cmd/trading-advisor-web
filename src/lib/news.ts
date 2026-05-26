@@ -39,8 +39,8 @@ function analyzeSentiment(text: string): { label: NewsItem["sentiment"]; score: 
   let pos = 0, neg = 0;
 
   for (const w of words) {
-    if (POSITIVE_WORDS.has(w)) pos++;
-    if (NEGATIVE_WORDS.has(w)) neg++;
+    if (POSITIVE_WORDS.has(w) || POSITIVE_WORDS_IT.has(w)) pos++;
+    if (NEGATIVE_WORDS.has(w) || NEGATIVE_WORDS_IT.has(w)) neg++;
   }
 
   const total = pos + neg;
@@ -53,7 +53,21 @@ function analyzeSentiment(text: string): { label: NewsItem["sentiment"]; score: 
 }
 
 // RSS feeds finanziari — usiamo un parser RSS-to-JSON gratuito
+// Parole italiane per sentiment
+const POSITIVE_WORDS_IT = new Set([
+  "rialzo", "crescita", "guadagno", "record", "boom", "ripresa", "ottimismo",
+  "rally", "positivo", "forte", "surplus", "utile", "utili", "balzo", "rimbalzo",
+  "massimo", "aumento", "acquisti", "fiducia", "espansione",
+]);
+const NEGATIVE_WORDS_IT = new Set([
+  "ribasso", "calo", "crollo", "perdita", "crisi", "recessione", "panico",
+  "negativo", "debole", "deficit", "vendite", "minimo", "rischio", "fuga",
+  "contrazione", "allarme", "tensione", "guerra", "inflazione", "fallimento",
+]);
+
 const RSS_FEEDS: Record<string, string> = {
+  "Il Sole 24 Ore": "https://www.ilsole24ore.com/rss/finanza.xml",
+  "Il Sole 24 Ore Mercati": "https://www.ilsole24ore.com/rss/finanza--mercati.xml",
   "Yahoo Finance": "https://finance.yahoo.com/news/rssindex",
   "MarketWatch": "https://feeds.marketwatch.com/marketwatch/topstories/",
   "CNBC": "https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=100003114",

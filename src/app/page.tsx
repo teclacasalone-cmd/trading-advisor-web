@@ -8,23 +8,23 @@ import SignalBadge from "@/components/SignalBadge";
 
 const SectorChart = dynamic(() => import("@/components/SectorChart"), { ssr: false });
 
-type Tab = "dashboard" | "signals" | "news" | "volumes" | "analyze";
+type Tab = "advisory" | "signals" | "news" | "volumes" | "analyze";
 
 export default function Home() {
-  const [tab, setTab] = useState<Tab>("dashboard");
+  const [tab, setTab] = useState<Tab>("advisory");
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
       <header className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
         <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
           <h1 className="text-xl font-bold">Trading Advisor</h1>
-          <p className="text-xs text-gray-400">Dati in tempo reale da Yahoo Finance</p>
+          <p className="text-xs text-gray-400">Consigli di investimento in tempo reale</p>
         </div>
         <nav className="max-w-7xl mx-auto px-4 flex gap-1 pb-2 overflow-x-auto">
           {(
             [
-              ["dashboard", "Dashboard"],
-              ["signals", "Segnali"],
+              ["advisory", "Cosa Comprare"],
+              ["signals", "Tutti i Segnali"],
               ["news", "News & Sentiment"],
               ["volumes", "Volume Scanner"],
               ["analyze", "Analisi Asset"],
@@ -33,7 +33,7 @@ export default function Home() {
             <button
               key={key}
               onClick={() => setTab(key)}
-              className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+              className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors whitespace-nowrap ${
                 tab === key
                   ? "bg-blue-600 text-white"
                   : "text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
@@ -46,91 +46,236 @@ export default function Home() {
       </header>
 
       <main className="max-w-7xl mx-auto px-4 py-6">
-        {tab === "dashboard" && <DashboardTab />}
+        {tab === "advisory" && <AdvisoryTab />}
         {tab === "signals" && <SignalsTab />}
         {tab === "news" && <NewsTab />}
         {tab === "volumes" && <VolumesTab />}
         {tab === "analyze" && <AnalyzeTab />}
       </main>
 
-      <footer className="text-center text-xs text-gray-400 py-4">
-        Questo tool è solo a scopo informativo. Non è consulenza finanziaria.
+      <footer className="text-center text-xs text-gray-400 py-4 px-4">
+        Questo tool è solo a scopo informativo e didattico. Non è consulenza finanziaria professionale. Investi solo ciò che puoi permetterti di perdere.
       </footer>
     </div>
   );
 }
 
-function DashboardTab() {
-  const [newsData, setNewsData] = useState<any>(null);
-  const [sectors, setSectors] = useState<any[]>([]);
-  const [indices, setIndices] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+// === ADVISORY — COSA COMPRARE ===
+function AdvisoryTab() {
+  const [report, setReport] = useState<any>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  useEffect(() => {
-    Promise.all([
-      fetch("/api/news").then(r => r.json()),
-      fetch("/api/sectors").then(r => r.json()),
-      fetch("/api/market?category=Indici").then(r => r.json()),
-    ]).then(([news, sec, idx]) => {
-      setNewsData(news);
-      setSectors(sec);
-      setIndices(idx);
-      setLoading(false);
-    }).catch(() => setLoading(false));
-  }, []);
-
-  if (loading) return <LoadingSpinner />;
+  const generate = () => {
+    setLoading(true);
+    setError("");
+    fetch("/api/advisory")
+      .then(r => r.json())
+      .then(data => {
+        if (data.error) setError(data.error);
+        else setReport(data);
+        setLoading(false);
+      })
+      .catch(() => { setError("Errore di rete"); setLoading(false); });
+  };
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <FearGreedGauge
-          score={newsData?.fearGreed?.score || 0}
-          rating={newsData?.fearGreed?.rating || "N/A"}
-        />
-        <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow">
-          <h3 className="text-sm font-medium text-gray-500 mb-2">Sentiment Notizie</h3>
-          <div className={`text-3xl font-bold ${
-            newsData?.sentiment?.overall === "BULLISH" ? "text-green-600" :
-            newsData?.sentiment?.overall === "BEARISH" ? "text-red-600" : "text-yellow-500"
-          }`}>
-            {newsData?.sentiment?.overall || "N/A"}
-          </div>
-          <div className="text-sm text-gray-500 mt-2">
-            Score medio: {newsData?.sentiment?.score || 0}
-          </div>
-          <div className="flex gap-3 mt-2 text-xs text-gray-400">
-            <span>Positive: {newsData?.sentiment?.positive || 0}</span>
-            <span>Negative: {newsData?.sentiment?.negative || 0}</span>
-            <span>Neutre: {newsData?.sentiment?.neutral || 0}</span>
-          </div>
+      {/* Header con bottone */}
+      <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow">
+        <h2 className="text-xl font-bold mb-2">Cosa comprare oggi?</h2>
+        <p className="text-sm text-gray-500 mb-4">
+          Analisi completa di mercato, notizie e indicatori tecnici per generare raccomandazioni concrete.
+        </p>
+        <button
+          onClick={generate}
+          disabled={loading}
+          className="px-6 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {loading ? "Analisi in corso... (30-60 secondi)" : "Genera Raccomandazioni"}
+        </button>
+        {error && <p className="text-red-500 mt-2">{error}</p>}
+      </div>
+
+      {loading && (
+        <div className="bg-white dark:bg-gray-800 rounded-lg p-8 shadow text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4" />
+          <p className="text-gray-500">Sto analizzando il mercato...</p>
+          <p className="text-xs text-gray-400 mt-1">Scarico dati, calcolo indicatori, analizzo notizie</p>
         </div>
-        <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow">
-          <h3 className="text-sm font-medium text-gray-500 mb-2">Indici Principali</h3>
-          <div className="space-y-2">
-            {indices.map((idx: any) => (
-              <div key={idx.ticker} className="flex justify-between items-center">
-                <span className="text-sm font-medium">{idx.ticker.replace("^", "")}</span>
-                <div className="text-right">
-                  <span className="text-sm">{idx.price?.toLocaleString()}</span>
-                  <span className={`ml-2 text-xs font-medium ${idx.changePct >= 0 ? "text-green-600" : "text-red-600"}`}>
-                    {idx.changePct >= 0 ? "+" : ""}{idx.changePct?.toFixed(2)}%
-                  </span>
-                </div>
-              </div>
-            ))}
+      )}
+
+      {report && !loading && (
+        <>
+          {/* Stato del mercato */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <FearGreedGauge score={report.fearGreed.score} rating={report.fearGreed.rating} />
+            <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow">
+              <h3 className="text-sm font-medium text-gray-500 mb-1">Condizione Mercato</h3>
+              <p className="text-lg font-bold">{report.marketCondition}</p>
+              <p className={`text-sm mt-2 font-medium ${
+                report.sentiment === "BULLISH" ? "text-green-600" :
+                report.sentiment === "BEARISH" ? "text-red-600" : "text-yellow-500"
+              }`}>
+                Sentiment: {report.sentiment}
+              </p>
+            </div>
+            <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow">
+              <h3 className="text-sm font-medium text-gray-500 mb-1">Riepilogo</h3>
+              <p className="text-sm">{report.summary}</p>
+            </div>
           </div>
+
+          {/* RACCOMANDAZIONI — COMPRA */}
+          {report.recommendations.filter((r: any) => r.action === "COMPRA").length > 0 && (
+            <div>
+              <h3 className="text-lg font-bold mb-3 text-green-600">COMPRA — Opportunità identificate</h3>
+              <div className="grid gap-4">
+                {report.recommendations
+                  .filter((r: any) => r.action === "COMPRA")
+                  .map((rec: any) => (
+                    <RecommendationCard key={rec.ticker} rec={rec} />
+                  ))}
+              </div>
+            </div>
+          )}
+
+          {/* RACCOMANDAZIONI — ASPETTA */}
+          {report.recommendations.filter((r: any) => r.action === "ASPETTA").length > 0 && (
+            <div>
+              <h3 className="text-lg font-bold mb-3 text-yellow-600">ASPETTA — Monitorare per ingresso</h3>
+              <div className="grid gap-4">
+                {report.recommendations
+                  .filter((r: any) => r.action === "ASPETTA")
+                  .map((rec: any) => (
+                    <RecommendationCard key={rec.ticker} rec={rec} />
+                  ))}
+              </div>
+            </div>
+          )}
+
+          {/* EVITARE */}
+          {report.avoidList.length > 0 && (
+            <div className="bg-red-50 dark:bg-red-900/20 rounded-lg p-6 shadow">
+              <h3 className="text-lg font-bold mb-3 text-red-600">DA EVITARE</h3>
+              <div className="space-y-2">
+                {report.avoidList.map((item: any) => (
+                  <div key={item.ticker} className="flex items-center gap-3">
+                    <span className="font-bold text-red-600">{item.ticker}</span>
+                    <span className="text-sm text-gray-600 dark:text-gray-300">{item.reason}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Settori da osservare */}
+          {report.sectorsToWatch.length > 0 && (
+            <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow">
+              <h3 className="text-lg font-bold mb-3">Settori da osservare</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {report.sectorsToWatch.map((s: any) => (
+                  <div key={s.sector} className="flex items-center justify-between border-b border-gray-100 dark:border-gray-700 pb-2">
+                    <span className="font-medium">{s.sector}</span>
+                    <div className="text-right">
+                      <span className={`text-sm font-medium ${s.trend === "RIALZO" ? "text-green-600" : "text-red-600"}`}>
+                        {s.trend}
+                      </span>
+                      <p className="text-xs text-gray-400">{s.reason}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
+// === Card raccomandazione ===
+function RecommendationCard({ rec }: { rec: any }) {
+  const actionColors: Record<string, string> = {
+    COMPRA: "border-l-green-500 bg-green-50 dark:bg-green-900/10",
+    ASPETTA: "border-l-yellow-500 bg-yellow-50 dark:bg-yellow-900/10",
+    VENDI: "border-l-red-500 bg-red-50 dark:bg-red-900/10",
+    TIENI: "border-l-gray-400",
+  };
+
+  const riskColors: Record<string, string> = {
+    BASSO: "text-green-600 bg-green-100",
+    MEDIO: "text-yellow-600 bg-yellow-100",
+    ALTO: "text-red-600 bg-red-100",
+  };
+
+  return (
+    <div className={`border-l-4 rounded-lg p-5 shadow ${actionColors[rec.action] || ""}`}>
+      {/* Header */}
+      <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+        <div className="flex items-center gap-3">
+          <h4 className="text-xl font-bold">{rec.ticker}</h4>
+          <span className="text-sm text-gray-500">{rec.name}</span>
+          <SignalBadge signal={rec.action} />
+        </div>
+        <div className="flex items-center gap-2">
+          <span className={`px-2 py-0.5 rounded text-xs font-medium ${riskColors[rec.riskLevel] || ""}`}>
+            Rischio {rec.riskLevel}
+          </span>
+          <span className="text-sm text-gray-500">Confidenza: {rec.confidence}%</span>
         </div>
       </div>
 
-      <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow">
-        <h3 className="text-lg font-medium mb-4">Performance Settori (oggi)</h3>
-        {sectors.length > 0 ? <SectorChart data={sectors} /> : <p className="text-gray-400">Nessun dato</p>}
+      {/* Dettagli */}
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-4">
+        <div>
+          <p className="text-xs text-gray-500">Prezzo attuale</p>
+          <p className="text-lg font-bold">${rec.currentPrice}</p>
+        </div>
+        <div>
+          <p className="text-xs text-gray-500">Prezzo ingresso</p>
+          <p className="text-sm font-medium">{rec.entryPrice}</p>
+        </div>
+        <div>
+          <p className="text-xs text-gray-500">Target</p>
+          <p className="text-lg font-bold text-green-600">${rec.targetPrice}</p>
+        </div>
+        <div>
+          <p className="text-xs text-gray-500">Stop Loss</p>
+          <p className="text-lg font-bold text-red-600">${rec.stopLoss}</p>
+        </div>
+        <div>
+          <p className="text-xs text-gray-500">Guadagno atteso</p>
+          <p className={`text-lg font-bold ${rec.expectedReturn >= 0 ? "text-green-600" : "text-red-600"}`}>
+            {rec.expectedReturn >= 0 ? "+" : ""}{rec.expectedReturn}%
+          </p>
+        </div>
+      </div>
+
+      {/* Timing e holding */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3 text-sm">
+        <div className="bg-white/50 dark:bg-gray-800/50 rounded p-3">
+          <span className="text-gray-500">Quando entrare: </span>
+          <span className="font-medium">{rec.timing}</span>
+        </div>
+        <div className="bg-white/50 dark:bg-gray-800/50 rounded p-3">
+          <span className="text-gray-500">Per quanto tempo: </span>
+          <span className="font-medium">{rec.holdingPeriod}</span>
+        </div>
+      </div>
+
+      {/* Motivazioni */}
+      <div className="space-y-1">
+        <p className="text-xs font-medium text-gray-500">Perché:</p>
+        {rec.reasons.map((r: string, i: number) => (
+          <p key={i} className="text-sm text-gray-600 dark:text-gray-300">• {r}</p>
+        ))}
       </div>
     </div>
   );
 }
 
+// === SIGNALS ===
 function SignalsTab() {
   const [signals, setSignals] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -185,6 +330,7 @@ function SignalsTab() {
   );
 }
 
+// === NEWS ===
 function NewsTab() {
   const [newsData, setNewsData] = useState<any>(null);
   const [filter, setFilter] = useState("Tutti");
@@ -230,6 +376,7 @@ function NewsTab() {
   );
 }
 
+// === VOLUMES ===
 function VolumesTab() {
   const [category, setCategory] = useState("Top Azioni");
   const [data, setData] = useState<any[]>([]);
@@ -308,8 +455,8 @@ function VolumesTab() {
   );
 }
 
+// === ANALYZE ===
 function AnalyzeTab() {
-  const [ticker, setTicker] = useState("AAPL");
   const [input, setInput] = useState("AAPL");
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(false);
@@ -317,7 +464,6 @@ function AnalyzeTab() {
   const analyze = useCallback(() => {
     const t = input.toUpperCase().trim();
     if (!t) return;
-    setTicker(t);
     setLoading(true);
     fetch(`/api/signals?ticker=${encodeURIComponent(t)}`)
       .then(r => r.json())
@@ -335,7 +481,7 @@ function AnalyzeTab() {
           value={input}
           onChange={e => setInput(e.target.value)}
           onKeyDown={e => e.key === "Enter" && analyze()}
-          placeholder="Ticker (es. AAPL, BTC-USD)"
+          placeholder="Ticker (es. AAPL, BTC-USD, TSLA)"
           className="px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm flex-1"
         />
         <button
@@ -346,28 +492,26 @@ function AnalyzeTab() {
         </button>
       </div>
 
-      {loading && <LoadingSpinner text={`Analisi ${ticker}...`} />}
+      {loading && <LoadingSpinner text="Analisi in corso..." />}
 
       {data?.signals && !loading && (
-        <div className="space-y-4">
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow">
-            <div className="flex items-center gap-4 mb-4 flex-wrap">
-              <h3 className="text-2xl font-bold">{data.signals.ticker}</h3>
-              <SignalBadge signal={data.signals.overallSignal} />
-              <span className="text-lg">${data.signals.price}</span>
-            </div>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-              <Stat label="RSI" value={data.signals.rsi} color={data.signals.rsi < 30 ? "green" : data.signals.rsi > 70 ? "red" : "gray"} />
-              <Stat label="MACD" value={data.signals.macdSignal} color={data.signals.macdSignal === "POSITIVO" ? "green" : "red"} />
-              <Stat label="Trend" value={data.signals.trend} />
-              <Stat label="Score" value={data.signals.score > 0 ? `+${data.signals.score}` : data.signals.score} color={data.signals.score > 0 ? "green" : data.signals.score < 0 ? "red" : "gray"} />
-            </div>
-            <div className="space-y-1">
-              <h4 className="text-sm font-medium text-gray-500">Motivazioni:</h4>
-              {data.signals.reasons?.map((r: string, i: number) => (
-                <p key={i} className="text-sm text-gray-600 dark:text-gray-300">- {r}</p>
-              ))}
-            </div>
+        <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow">
+          <div className="flex items-center gap-4 mb-4 flex-wrap">
+            <h3 className="text-2xl font-bold">{data.signals.ticker}</h3>
+            <SignalBadge signal={data.signals.overallSignal} />
+            <span className="text-lg">${data.signals.price}</span>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+            <Stat label="RSI" value={data.signals.rsi} color={data.signals.rsi < 30 ? "green" : data.signals.rsi > 70 ? "red" : "gray"} />
+            <Stat label="MACD" value={data.signals.macdSignal} color={data.signals.macdSignal === "POSITIVO" ? "green" : "red"} />
+            <Stat label="Trend" value={data.signals.trend} />
+            <Stat label="Score" value={data.signals.score > 0 ? `+${data.signals.score}` : data.signals.score} color={data.signals.score > 0 ? "green" : data.signals.score < 0 ? "red" : "gray"} />
+          </div>
+          <div className="space-y-1">
+            <h4 className="text-sm font-medium text-gray-500">Motivazioni:</h4>
+            {data.signals.reasons?.map((r: string, i: number) => (
+              <p key={i} className="text-sm text-gray-600 dark:text-gray-300">- {r}</p>
+            ))}
           </div>
         </div>
       )}
