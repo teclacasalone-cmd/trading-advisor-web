@@ -1,4 +1,4 @@
-import { getQuotes, getHistory, computeSignals, WATCHLIST, SECTOR_NAMES, type QuoteData, type HistoryPoint, type TechnicalSignals } from "./yahoo";
+import { getQuotes, getHistory, computeSignals, WATCHLIST, ASSET_NAMES, type QuoteData, type HistoryPoint, type TechnicalSignals } from "./yahoo";
 import { fetchNews, summarizeSentiment, getFearGreedIndex } from "./news";
 
 export interface Recommendation {
@@ -226,7 +226,7 @@ function generateRecommendation(
     riskLevel,
     reasons,
     timing,
-    sector: SECTOR_NAMES[ticker] || "",
+    sector: ASSET_NAMES[ticker] || "",
   };
 }
 
@@ -240,8 +240,15 @@ export async function generateFullReport(): Promise<AdvisoryReport> {
   const sentimentData = summarizeSentiment(newsItems);
   const marketSentiment = sentimentData.overall;
 
-  // 2. Analisi di tutti i ticker
-  const allTickers = [...WATCHLIST["Top Azioni"], ...WATCHLIST["Crypto"], ...WATCHLIST["ETF Settoriali"]];
+  // 2. Analisi di tutti i ticker (tutti i mercati)
+  const allTickers = [
+    ...WATCHLIST["Top Azioni USA"],
+    ...WATCHLIST["FTSE MIB"],
+    ...WATCHLIST["Crypto"],
+    ...WATCHLIST["ETF Settoriali"],
+    ...WATCHLIST["Commodities"],
+    ...WATCHLIST["Forex"],
+  ];
   const quotes = await getQuotes(allTickers);
   const quoteMap = new Map(quotes.map(q => [q.ticker, q]));
 
@@ -285,7 +292,7 @@ export async function generateFullReport(): Promise<AdvisoryReport> {
     .sort((a, b) => b.changePct - a.changePct)
     .slice(0, 5)
     .map(q => ({
-      sector: SECTOR_NAMES[q.ticker] || q.ticker,
+      sector: ASSET_NAMES[q.ticker] || q.ticker,
       trend: q.changePct > 0 ? "RIALZO" : "RIBASSO",
       reason: q.changePct > 0
         ? `+${q.changePct.toFixed(1)}% oggi, volume ${q.volRatio}x`

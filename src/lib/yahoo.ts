@@ -181,14 +181,44 @@ export function computeSignals(ticker: string, history: HistoryPoint[]): Technic
 }
 
 export const WATCHLIST: Record<string, string[]> = {
-  "Indici": ["^GSPC", "^DJI", "^IXIC", "^STOXX50E"],
+  "Indici Mondiali": ["^GSPC", "^DJI", "^IXIC", "^STOXX50E", "^FTSE", "^GDAXI", "^FCHI", "FTSEMIB.MI", "^N225", "^HSI"],
+  "FTSE MIB": [
+    "ISP.MI", "UCG.MI", "ENI.MI", "ENEL.MI", "STLAM.MI", "RACE.MI",
+    "G.MI", "MB.MI", "BAMI.MI", "TIT.MI", "PRY.MI", "SRG.MI",
+    "CPR.MI", "LDO.MI", "A2A.MI", "HER.MI",
+  ],
+  "Top Azioni USA": ["AAPL", "MSFT", "GOOGL", "AMZN", "NVDA", "META", "TSLA", "JPM", "V", "JNJ", "WMT", "PG", "UNH", "HD", "DIS"],
   "ETF Settoriali": ["XLK", "XLF", "XLE", "XLV", "XLI", "XLY", "XLP", "XLU", "XLRE", "XLC", "XLB"],
-  "Crypto": ["BTC-USD", "ETH-USD", "SOL-USD", "XRP-USD", "ADA-USD"],
-  "Top Azioni": ["AAPL", "MSFT", "GOOGL", "AMZN", "NVDA", "META", "TSLA", "JPM", "V", "JNJ", "WMT", "PG"],
+  "Crypto": ["BTC-USD", "ETH-USD", "SOL-USD", "XRP-USD", "ADA-USD", "DOGE-USD", "AVAX-USD", "DOT-USD"],
+  "Commodities": ["GC=F", "SI=F", "CL=F", "NG=F", "HG=F", "PL=F"],
+  "Forex": ["EURUSD=X", "GBPUSD=X", "USDJPY=X", "USDCHF=X", "EURGBP=X", "EURJPY=X"],
+  "Obbligazioni": ["^TNX", "^TYX", "^FVX", "^IRX"],
 };
 
-export const SECTOR_NAMES: Record<string, string> = {
+export const ASSET_NAMES: Record<string, string> = {
+  // Settori ETF
   XLK: "Technology", XLF: "Financial", XLE: "Energy", XLV: "Healthcare",
   XLI: "Industrial", XLY: "Consumer Discr.", XLP: "Consumer Staples",
   XLU: "Utilities", XLRE: "Real Estate", XLC: "Communication", XLB: "Materials",
+  // FTSE MIB
+  "ISP.MI": "Intesa Sanpaolo", "UCG.MI": "UniCredit", "ENI.MI": "ENI",
+  "ENEL.MI": "Enel", "STLAM.MI": "Stellantis", "RACE.MI": "Ferrari",
+  "G.MI": "Generali", "MB.MI": "Mediobanca", "BAMI.MI": "Banco BPM",
+  "TIT.MI": "Telecom Italia", "PRY.MI": "Prysmian", "SRG.MI": "Snam",
+  "CPR.MI": "Campari", "LDO.MI": "Leonardo", "A2A.MI": "A2A", "HER.MI": "Hera",
+  // Commodities
+  "GC=F": "Oro", "SI=F": "Argento", "CL=F": "Petrolio WTI",
+  "NG=F": "Gas Naturale", "HG=F": "Rame", "PL=F": "Platino",
+  // Forex
+  "EURUSD=X": "EUR/USD", "GBPUSD=X": "GBP/USD", "USDJPY=X": "USD/JPY",
+  "USDCHF=X": "USD/CHF", "EURGBP=X": "EUR/GBP", "EURJPY=X": "EUR/JPY",
+  // Obbligazioni
+  "^TNX": "Treasury 10Y", "^TYX": "Treasury 30Y", "^FVX": "Treasury 5Y", "^IRX": "Treasury 3M",
+  // Indici
+  "^GSPC": "S&P 500", "^DJI": "Dow Jones", "^IXIC": "Nasdaq", "^STOXX50E": "Euro Stoxx 50",
+  "^FTSE": "FTSE 100", "^GDAXI": "DAX", "^FCHI": "CAC 40", "FTSEMIB.MI": "FTSE MIB",
+  "^N225": "Nikkei 225", "^HSI": "Hang Seng",
 };
+
+// Backward compat
+export const SECTOR_NAMES = ASSET_NAMES;
