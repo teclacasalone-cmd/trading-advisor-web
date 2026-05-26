@@ -143,6 +143,32 @@ function AdvisoryTab() {
             </div>
           </div>
 
+          {/* AI Briefing */}
+          {report.aiBriefing && (
+            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-lg p-6 shadow border border-blue-200 dark:border-blue-800">
+              <div className="flex items-center gap-2 mb-3">
+                <span className="text-lg">🤖</span>
+                <h3 className="text-lg font-bold text-blue-800 dark:text-blue-300">Briefing AI — Il tuo consulente</h3>
+              </div>
+              <div className="prose prose-sm dark:prose-invert max-w-none text-gray-700 dark:text-gray-300 whitespace-pre-line">
+                {report.aiBriefing}
+              </div>
+            </div>
+          )}
+
+          {/* AI News Analysis */}
+          {report.aiNewsAnalysis && (
+            <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow">
+              <div className="flex items-center gap-2 mb-3">
+                <span className="text-lg">📰</span>
+                <h3 className="font-bold">Analisi AI delle Notizie</h3>
+              </div>
+              <div className="text-sm text-gray-600 dark:text-gray-300 whitespace-pre-line">
+                {report.aiNewsAnalysis}
+              </div>
+            </div>
+          )}
+
           {/* COMPRA */}
           <RecSection
             title="COMPRA — Opportunit&agrave; identificate"

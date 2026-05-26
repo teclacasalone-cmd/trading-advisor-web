@@ -1,5 +1,6 @@
 import { getQuotes, getHistory, computeSignals, WATCHLIST, ASSET_NAMES, type QuoteData, type HistoryPoint, type TechnicalSignals } from "./yahoo";
 import { fetchNews, summarizeSentiment, getFearGreedIndex } from "./news";
+import { generateMarketBriefing, analyzeNewsWithAI } from "./gemini";
 
 export interface Recommendation {
   ticker: string;
@@ -27,6 +28,8 @@ export interface AdvisoryReport {
   sectorsToWatch: { sector: string; trend: string; reason: string }[];
   avoidList: { ticker: string; reason: string }[];
   summary: string;
+  aiBriefing: string;
+  aiNewsAnalysis: string;
 }
 
 // Supporto e resistenza semplificati
@@ -326,6 +329,25 @@ export async function generateFullReport(): Promise<AdvisoryReport> {
   }
   summary += `Mercato: ${marketCondition.split("—")[0].trim()}, Fear & Greed: ${fearGreed.score}/100.`;
 
+  // 6. AI Analysis con Gemini
+  const topNewsHeadlines = newsItems.map(n => `[${n.sentiment}] ${n.title}`);
+  const sectorPerfStrings = sectorsToWatch.map(s => `${s.sector}: ${s.trend} (${s.reason})`);
+  const buyTickers = buys.map(b => `${b.ticker} (score: ${b.confidence}%)`);
+  const sellTickers = sells.map(s => `${s.ticker}`);
+
+  const [aiBriefing, aiNewsAnalysis] = await Promise.all([
+    generateMarketBriefing(
+      fearGreed.score,
+      fearGreed.rating,
+      marketSentiment,
+      topNewsHeadlines,
+      sectorPerfStrings,
+      buyTickers,
+      sellTickers,
+    ),
+    analyzeNewsWithAI(topNewsHeadlines),
+  ]);
+
   return {
     date: new Date().toISOString(),
     marketCondition,
@@ -335,5 +357,7 @@ export async function generateFullReport(): Promise<AdvisoryReport> {
     sectorsToWatch,
     avoidList,
     summary,
+    aiBriefing,
+    aiNewsAnalysis,
   };
 }
