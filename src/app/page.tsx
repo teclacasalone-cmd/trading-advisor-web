@@ -11,8 +11,9 @@ const SectorChart = dynamic(() => import("@/components/SectorChart"), { ssr: fal
 const TradingViewChart = dynamic(() => import("@/components/TradingViewChart"), { ssr: false });
 const TradingViewTicker = dynamic(() => import("@/components/TradingViewTicker"), { ssr: false });
 const TradingViewHeatmap = dynamic(() => import("@/components/TradingViewHeatmap"), { ssr: false });
+const TradingViewMini = dynamic(() => import("@/components/TradingViewMini"), { ssr: false });
 
-type Tab = "consulente" | "live" | "storico" | "mercati" | "signals" | "news" | "volumes" | "analyze";
+type Tab = "consulente" | "live" | "grafici" | "storico" | "mercati" | "news" | "volumes" | "analyze";
 
 const CATEGORIES = [
   "Top Azioni USA", "FTSE MIB", "Crypto", "ETF Settoriali",
@@ -27,7 +28,6 @@ export default function Home() {
   const [strategyData, setStrategyData] = useState<any>(null);
   const [strategyLoading, setStrategyLoading] = useState(false);
   const [newsData, setNewsData] = useState<any>(null);
-  const [signalsData, setSignalsData] = useState<any[]>([]);
 
   return (
     <div className="min-h-screen" style={{ background: "var(--background)", color: "var(--foreground)" }}>
@@ -54,9 +54,9 @@ export default function Home() {
             [
               ["consulente", "Il Mio Consulente"],
               ["live", "Live Monitor"],
+              ["grafici", "I Miei Grafici"],
               ["storico", "Storico & Verifica"],
               ["mercati", "Mercati & Grafici"],
-              ["signals", "Tutti i Segnali"],
               ["news", "News & Sentiment"],
               ["volumes", "Volume Scanner"],
               ["analyze", "Analisi Asset"],
@@ -80,6 +80,7 @@ export default function Home() {
 
       <main className="max-w-7xl mx-auto px-4 py-6">
         {tab === "live" && <LiveTab />}
+        {tab === "grafici" && <GraficiTab />}
         {tab === "storico" && <StoricoTab />}
         {tab === "consulente" && <ConsulenteTab
           report={advisoryReport} setReport={setAdvisoryReport}
@@ -88,7 +89,6 @@ export default function Home() {
           strategyLoading={strategyLoading} setStrategyLoading={setStrategyLoading}
         />}
         {tab === "mercati" && <MercatiTab />}
-        {tab === "signals" && <SignalsTab data={signalsData} setData={setSignalsData} />}
         {tab === "news" && <NewsTab data={newsData} setData={setNewsData} />}
         {tab === "volumes" && <VolumesTab />}
         {tab === "analyze" && <AnalyzeTab />}
@@ -112,6 +112,106 @@ function Card({ children, className = "", highlight = false }: { children: React
       }}
     >
       {children}
+    </div>
+  );
+}
+
+// === I MIEI GRAFICI ===
+function GraficiTab() {
+  const [selectedChart, setSelectedChart] = useState<string | null>(null);
+  const [filter, setFilter] = useState("STRATEGIA");
+
+  const strategyCharts = [
+    // Italia
+    { ticker: "MIL:ISP", label: "Intesa Sanpaolo", cat: "ITALIA" },
+    { ticker: "MIL:ENI", label: "ENI", cat: "ITALIA" },
+    { ticker: "MIL:ENEL", label: "Enel", cat: "ITALIA" },
+    { ticker: "MIL:A2A", label: "A2A", cat: "ITALIA" },
+    { ticker: "MIL:LDO", label: "Leonardo", cat: "ITALIA" },
+    { ticker: "MIL:BAMI", label: "Banco BPM", cat: "ITALIA" },
+    { ticker: "MIL:HER", label: "Hera", cat: "ITALIA" },
+    { ticker: "MIL:SRG", label: "Snam", cat: "ITALIA" },
+    { ticker: "MIL:CPR", label: "Campari", cat: "ITALIA" },
+    // USA
+    { ticker: "NASDAQ:PFE", label: "Pfizer", cat: "USA" },
+    { ticker: "NASDAQ:PYPL", label: "PayPal", cat: "USA" },
+    { ticker: "NYSE:KO", label: "Coca-Cola", cat: "USA" },
+    { ticker: "NYSE:BAC", label: "Bank of America", cat: "USA" },
+    { ticker: "NASDAQ:INTC", label: "Intel", cat: "USA" },
+    // Nicchia
+    { ticker: "NASDAQ:SOFI", label: "SoFi Technologies", cat: "NICCHIA" },
+    { ticker: "NASDAQ:MARA", label: "MARA (BTC Mining)", cat: "NICCHIA" },
+    { ticker: "NASDAQ:RKLB", label: "Rocket Lab", cat: "NICCHIA" },
+    { ticker: "NASDAQ:GRAB", label: "Grab Holdings", cat: "NICCHIA" },
+    { ticker: "NYSE:IONQ", label: "IonQ (Quantum)", cat: "NICCHIA" },
+    { ticker: "NASDAQ:PLTR", label: "Palantir", cat: "NICCHIA" },
+    // Crypto
+    { ticker: "BITSTAMP:BTCUSD", label: "Bitcoin", cat: "CRYPTO" },
+    { ticker: "BITSTAMP:ETHUSD", label: "Ethereum", cat: "CRYPTO" },
+    { ticker: "BITSTAMP:XRPUSD", label: "XRP", cat: "CRYPTO" },
+    { ticker: "BINANCE:LINKUSDT", label: "Chainlink", cat: "CRYPTO" },
+  ];
+
+  const filters = ["STRATEGIA", "ITALIA", "USA", "NICCHIA", "CRYPTO"];
+  const filtered = filter === "STRATEGIA" ? strategyCharts : strategyCharts.filter(c => c.cat === filter);
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <div>
+          <h2 className="text-xl font-black" style={{ color: "var(--accent)" }}>I Miei Grafici</h2>
+          <p className="text-xs" style={{ color: "#94a3b8" }}>Andamenti in tempo reale degli asset nella tua strategia e nei report</p>
+        </div>
+      </div>
+
+      {/* Filtri */}
+      <div className="flex gap-2 flex-wrap">
+        {filters.map(f => (
+          <button
+            key={f}
+            onClick={() => setFilter(f)}
+            className="px-3 py-1 rounded-lg text-xs font-bold transition-all"
+            style={{
+              background: filter === f ? "var(--accent)" : "var(--surface-light)",
+              color: filter === f ? "#08091a" : "#94a3b8",
+              border: `1px solid ${filter === f ? "var(--accent)" : "var(--border)"}`,
+            }}
+          >
+            {f === "STRATEGIA" ? "Tutti" : f}
+          </button>
+        ))}
+      </div>
+
+      {/* Griglia mini grafici */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {filtered.map(chart => (
+          <div
+            key={chart.ticker}
+            className="rounded-xl overflow-hidden cursor-pointer transition-all hover:brightness-110"
+            style={{ background: "var(--surface)", border: "1px solid var(--border)" }}
+            onClick={() => setSelectedChart(selectedChart === chart.ticker ? null : chart.ticker)}
+          >
+            <div className="px-3 pt-3 flex items-center justify-between">
+              <span className="text-sm font-bold" style={{ color: "var(--accent)" }}>{chart.label}</span>
+              <span className="text-xs px-2 py-0.5 rounded" style={{ background: "var(--surface-light)", color: "#94a3b8" }}>{chart.cat}</span>
+            </div>
+            <TradingViewMini symbol={chart.ticker} height={220} />
+          </div>
+        ))}
+      </div>
+
+      {/* Grafico grande se selezionato */}
+      {selectedChart && (
+        <Card>
+          <div className="flex justify-between items-center mb-2">
+            <h3 className="font-bold" style={{ color: "var(--accent)" }}>
+              {strategyCharts.find(c => c.ticker === selectedChart)?.label || selectedChart}
+            </h3>
+            <button onClick={() => setSelectedChart(null)} className="text-sm" style={{ color: "#94a3b8" }}>Chiudi</button>
+          </div>
+          <TradingViewChart symbol={selectedChart} height={500} />
+        </Card>
+      )}
     </div>
   );
 }
@@ -988,59 +1088,6 @@ function MercatiTab() {
         </div>
         <TradingViewHeatmap exchange={heatmapExchange} height={500} />
       </Card>
-    </div>
-  );
-}
-
-// === SIGNALS ===
-function SignalsTab({ data: signals, setData: setSignals }: { data: any[]; setData: (d: any[]) => void }) {
-  const [loading, setLoading] = useState(signals.length === 0);
-
-  useEffect(() => {
-    if (signals.length > 0) return; // già caricati
-    fetch("/api/signals")
-      .then(r => r.json())
-      .then(data => { setSignals(data); setLoading(false); })
-      .catch(() => setLoading(false));
-  }, []);
-
-  if (loading) return <LoadingSpinner text="Calcolo segnali tecnici..." />;
-
-  return (
-    <div className="space-y-4">
-      <h2 className="text-lg font-bold" style={{ color: "var(--accent)" }}>Segnali Tecnici — Azioni & Crypto</h2>
-      <div className="rounded-xl overflow-x-auto" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
-        <table className="w-full text-sm">
-          <thead>
-            <tr style={{ background: "var(--surface-light)" }}>
-              <th className="px-4 py-3 text-left text-xs font-bold" style={{ color: "#94a3b8" }}>Ticker</th>
-              <th className="px-4 py-3 text-left text-xs font-bold" style={{ color: "#94a3b8" }}>Prezzo</th>
-              <th className="px-4 py-3 text-left text-xs font-bold" style={{ color: "#94a3b8" }}>RSI</th>
-              <th className="px-4 py-3 text-left text-xs font-bold" style={{ color: "#94a3b8" }}>Trend</th>
-              <th className="px-4 py-3 text-left text-xs font-bold" style={{ color: "#94a3b8" }}>Segnale</th>
-              <th className="px-4 py-3 text-left text-xs font-bold" style={{ color: "#94a3b8" }}>Score</th>
-              <th className="px-4 py-3 text-left text-xs font-bold hidden md:table-cell" style={{ color: "#94a3b8" }}>Motivi</th>
-            </tr>
-          </thead>
-          <tbody>
-            {signals.map((s: any) => (
-              <tr key={s.ticker} className="hover:brightness-110" style={{ borderBottom: "1px solid var(--border)" }}>
-                <td className="px-4 py-3 font-bold">{s.ticker}</td>
-                <td className="px-4 py-3">${s.price}</td>
-                <td className="px-4 py-3" style={{ color: s.rsi < 30 ? "#22c55e" : s.rsi > 70 ? "#ef4444" : "inherit" }}>{s.rsi}</td>
-                <td className="px-4 py-3 text-xs">{s.trend}</td>
-                <td className="px-4 py-3"><SignalBadge signal={s.overallSignal} /></td>
-                <td className="px-4 py-3 font-bold" style={{ color: s.score > 0 ? "#22c55e" : s.score < 0 ? "#ef4444" : "inherit" }}>
-                  {s.score > 0 ? "+" : ""}{s.score}
-                </td>
-                <td className="px-4 py-3 text-xs hidden md:table-cell" style={{ color: "#94a3b8" }}>
-                  {s.reasons?.slice(0, 2).join(" | ")}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
     </div>
   );
 }
