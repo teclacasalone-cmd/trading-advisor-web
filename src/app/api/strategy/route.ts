@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { STRATEGY_PICKS, STRATEGY_RULES, STRATEGY_DATE, checkStrategy } from "@/lib/strategy";
+import { STRATEGY_PICKS, STRATEGY_RULES, STRATEGY_DATE, STRATEGY_LESSONS, checkStrategy } from "@/lib/strategy";
 import { getQuotes, getAnalystData } from "@/lib/yahoo";
 import { askGemini } from "@/lib/gemini";
 import { saveStrategyChecks, getAccuracyStats, getReportHistory } from "@/lib/supabase";
@@ -45,10 +45,14 @@ ${warnings.map(c => `${c.pick.ticker}: era ${c.pick.currency}${c.pick.referenceP
 TARGET RAGGIUNTI:
 ${targets.map(c => `${c.pick.ticker}: target ${c.pick.currency}${c.pick.targetPrice} raggiunto, ora a ${c.pick.currency}${c.currentPrice}`).join("\n") || "Nessuno"}
 
+LEZIONI DALLA STRATEGIA PRECEDENTE:
+${STRATEGY_LESSONS.join("\n")}
+
 Rispondi con:
-1. VERDETTO GENERALE: la strategia sta funzionando?
-2. COSA FARE OGGI: quali azioni comprare/vendere adesso
-3. AGGIUSTAMENTI: cosa cambiare nella strategia`;
+1. VERDETTO GENERALE: la strategia sta funzionando? Quali pattern si confermano?
+2. COSA FARE OGGI: quali azioni comprare/vendere adesso, con prezzi concreti
+3. NICCHIA: tra le nuove pick di nicchia, quali sono le più promettenti?
+4. AGGIUSTAMENTI: cosa cambiare, basandoti sulle lezioni apprese`;
 
       aiCommentary = await askGemini(prompt);
     } catch {}

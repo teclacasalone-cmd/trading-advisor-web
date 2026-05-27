@@ -328,6 +328,10 @@ export const WATCHLIST: Record<string, string[]> = {
   "Crypto": ["BTC-USD", "ETH-USD", "SOL-USD", "XRP-USD", "ADA-USD", "DOGE-USD", "AVAX-USD", "DOT-USD", "LINK-USD", "MATIC-USD"],
   "Commodities": ["GC=F", "SI=F", "CL=F", "NG=F", "HG=F", "PL=F"],
   "Forex": ["EURUSD=X", "GBPUSD=X", "USDJPY=X", "USDCHF=X", "EURGBP=X", "EURJPY=X"],
+  "Nicchia": [
+    "MARA", "RKLB", "GRAB", "IONQ", "SOFI", "PLTR",
+    "BAMI.MI", "HER.MI", "SRG.MI", "CPR.MI",
+  ],
   "Obbligazioni": ["^TNX", "^TYX", "^FVX", "^IRX"],
 };
 
@@ -352,6 +356,9 @@ export const ASSET_NAMES: Record<string, string> = {
   "XRP-USD": "XRP (Ripple)", "ADA-USD": "Cardano", "DOGE-USD": "Dogecoin",
   "AVAX-USD": "Avalanche", "DOT-USD": "Polkadot",
   "LINK-USD": "Chainlink", "MATIC-USD": "Polygon",
+  // Nicchia
+  MARA: "MARA Holdings (Bitcoin Mining)", RKLB: "Rocket Lab (Spazio)",
+  GRAB: "Grab Holdings (Super-app Asia)", IONQ: "IonQ (Quantum Computing)",
   // ETF europei
   "VWCE.DE": "Vanguard FTSE All-World", "IWDA.AS": "iShares MSCI World", "SPY5.DE": "SPDR S&P 500 EUR",
   // FTSE MIB

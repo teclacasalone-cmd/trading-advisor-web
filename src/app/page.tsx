@@ -617,13 +617,14 @@ function ConsulenteTab({
           )}
 
           {/* Picks per categoria */}
-          {["ITALIA", "USA", "CRYPTO"].map(cat => {
+          {["ITALIA", "USA", "CRYPTO", "NICCHIA"].map(cat => {
             const catChecks = (strategy.checks || []).filter((c: any) => c.pick.category === cat);
             if (catChecks.length === 0) return null;
+            const catNames: Record<string, string> = { ITALIA: "Italia (FTSE MIB)", USA: "USA", CRYPTO: "Crypto", NICCHIA: "Nicchia & Crescita" };
             return (
               <div key={cat}>
                 <h3 className="text-lg font-bold mb-3" style={{ color: "var(--accent)" }}>
-                  {cat === "ITALIA" ? "Italia (FTSE MIB)" : cat === "USA" ? "USA" : "Crypto"}
+                  {catNames[cat] || cat}
                 </h3>
                 <div className="grid gap-4">
                   {catChecks.map((check: any) => (
@@ -718,6 +719,9 @@ function StrategyCard({ check, statusColors, onChart }: { check: any; statusColo
         <div className="rounded-lg p-3" style={{ background: "var(--surface-light)" }}><span className="font-bold" style={{ color: "#22c55e" }}>Tesi: </span><span style={{ color: "#94a3b8" }}>{check.pick.thesis}</span></div>
         <div className="rounded-lg p-3" style={{ background: "var(--surface-light)" }}><span className="font-bold" style={{ color: "#ef4444" }}>Rischi: </span><span style={{ color: "#94a3b8" }}>{check.pick.risks}</span></div>
       </div>
+      {check.pick.previousResult && (
+        <p className="text-xs mt-2" style={{ color: "#a855f7" }}>Strategia precedente: {check.pick.previousResult}</p>
+      )}
       {check.analystConsensus && <p className="text-xs mt-2" style={{ color: "#60a5fa" }}>Analisti: {check.analystConsensus}</p>}
     </div>
   );
