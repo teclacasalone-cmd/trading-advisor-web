@@ -559,7 +559,8 @@ function ConsulenteTab({
                 {report.avoidList.map((item: any) => (
                   <div key={item.ticker} className="flex items-center gap-3">
                     <span className="font-bold text-red-400">{item.ticker}</span>
-                    <span className="text-sm" style={{ color: "#94a3b8" }}>{item.reason}</span>
+                    {item.name && item.name !== item.ticker && <span className="text-xs" style={{ color: "#64748b" }}>{item.name}</span>}
+                    <span className="text-sm" style={{ color: "#94a3b8" }}>— {item.reason}</span>
                   </div>
                 ))}
               </div>

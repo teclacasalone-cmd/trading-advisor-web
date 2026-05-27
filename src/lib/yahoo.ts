@@ -336,11 +336,22 @@ export const ASSET_NAMES: Record<string, string> = {
   XLK: "Technology", XLF: "Financial", XLE: "Energy", XLV: "Healthcare",
   XLI: "Industrial", XLY: "Consumer Discr.", XLP: "Consumer Staples",
   XLU: "Utilities", XLRE: "Real Estate", XLC: "Communication", XLB: "Materials",
+  // Top Azioni USA
+  AAPL: "Apple", MSFT: "Microsoft", GOOGL: "Alphabet (Google)", AMZN: "Amazon",
+  NVDA: "NVIDIA", META: "Meta (Facebook)", TSLA: "Tesla",
+  JPM: "JPMorgan Chase", V: "Visa", JNJ: "Johnson & Johnson",
+  WMT: "Walmart", PG: "Procter & Gamble", UNH: "UnitedHealth",
+  HD: "Home Depot", DIS: "Walt Disney",
   // Azioni accessibili USA
   F: "Ford", BAC: "Bank of America", INTC: "Intel", PLTR: "Palantir",
-  SNAP: "Snap", SOFI: "SoFi", NIO: "NIO", RIVN: "Rivian",
-  T: "AT&T", PFE: "Pfizer", CSCO: "Cisco", KO: "Coca-Cola",
-  PEP: "PepsiCo", MRK: "Merck", ABBV: "AbbVie", PYPL: "PayPal",
+  SNAP: "Snapchat", SOFI: "SoFi Technologies", NIO: "NIO (auto EV Cina)", RIVN: "Rivian (auto EV)",
+  T: "AT&T", PFE: "Pfizer", CSCO: "Cisco Systems", KO: "Coca-Cola",
+  PEP: "PepsiCo", MRK: "Merck & Co", ABBV: "AbbVie", PYPL: "PayPal",
+  // Crypto
+  "BTC-USD": "Bitcoin", "ETH-USD": "Ethereum", "SOL-USD": "Solana",
+  "XRP-USD": "XRP (Ripple)", "ADA-USD": "Cardano", "DOGE-USD": "Dogecoin",
+  "AVAX-USD": "Avalanche", "DOT-USD": "Polkadot",
+  "LINK-USD": "Chainlink", "MATIC-USD": "Polygon",
   // ETF europei
   "VWCE.DE": "Vanguard FTSE All-World", "IWDA.AS": "iShares MSCI World", "SPY5.DE": "SPDR S&P 500 EUR",
   // FTSE MIB

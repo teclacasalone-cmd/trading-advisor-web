@@ -28,7 +28,7 @@ export interface AdvisoryReport {
   sentiment: string;
   recommendations: Recommendation[];
   sectorsToWatch: { sector: string; trend: string; reason: string }[];
-  avoidList: { ticker: string; reason: string }[];
+  avoidList: { ticker: string; name: string; reason: string }[];
   summary: string;
   aiBriefing: string;
   aiNewsAnalysis: string;
@@ -289,7 +289,7 @@ export async function generateFullReport(): Promise<AdvisoryReport> {
   const quoteMap = new Map(quotes.map(q => [q.ticker, q]));
 
   const recommendations: Recommendation[] = [];
-  const avoidList: { ticker: string; reason: string }[] = [];
+  const avoidList: { ticker: string; name: string; reason: string }[] = [];
 
   for (const ticker of allTickers) {
     const quote = quoteMap.get(ticker);
@@ -305,7 +305,7 @@ export async function generateFullReport(): Promise<AdvisoryReport> {
 
       if (rec) {
         if (rec.action === "VENDI" && rec.confidence > 60) {
-          avoidList.push({ ticker, reason: rec.reasons[0] || "Segnali negativi" });
+          avoidList.push({ ticker, name: rec.name || ASSET_NAMES[ticker] || ticker, reason: rec.reasons[0] || "Segnali negativi" });
         }
         recommendations.push(rec);
       }
