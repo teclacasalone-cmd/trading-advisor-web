@@ -12,7 +12,7 @@ const TradingViewChart = dynamic(() => import("@/components/TradingViewChart"), 
 const TradingViewTicker = dynamic(() => import("@/components/TradingViewTicker"), { ssr: false });
 const TradingViewHeatmap = dynamic(() => import("@/components/TradingViewHeatmap"), { ssr: false });
 
-type Tab = "consulente" | "storico" | "mercati" | "signals" | "news" | "volumes" | "analyze";
+type Tab = "consulente" | "live" | "storico" | "mercati" | "signals" | "news" | "volumes" | "analyze";
 
 const CATEGORIES = [
   "Top Azioni USA", "FTSE MIB", "Crypto", "ETF Settoriali",
@@ -53,6 +53,7 @@ export default function Home() {
           {(
             [
               ["consulente", "Il Mio Consulente"],
+              ["live", "Live Monitor"],
               ["storico", "Storico & Verifica"],
               ["mercati", "Mercati & Grafici"],
               ["signals", "Tutti i Segnali"],
@@ -78,6 +79,7 @@ export default function Home() {
       </header>
 
       <main className="max-w-7xl mx-auto px-4 py-6">
+        {tab === "live" && <LiveTab />}
         {tab === "storico" && <StoricoTab />}
         {tab === "consulente" && <ConsulenteTab
           report={advisoryReport} setReport={setAdvisoryReport}
@@ -110,6 +112,201 @@ function Card({ children, className = "", highlight = false }: { children: React
       }}
     >
       {children}
+    </div>
+  );
+}
+
+// === LIVE MONITOR ===
+function LiveTab() {
+  const [data, setData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [lastUpdate, setLastUpdate] = useState("");
+  const [filter, setFilter] = useState("TUTTI");
+  const [autoRefresh, setAutoRefresh] = useState(true);
+
+  const load = useCallback(() => {
+    fetch("/api/live")
+      .then(r => r.json())
+      .then(d => {
+        setData(d);
+        setLastUpdate(new Date().toLocaleTimeString("it-IT"));
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
+  }, []);
+
+  useEffect(() => { load(); }, [load]);
+
+  // Auto-refresh ogni 60 secondi
+  useEffect(() => {
+    if (!autoRefresh) return;
+    const interval = setInterval(load, 60000);
+    return () => clearInterval(interval);
+  }, [autoRefresh, load]);
+
+  const items = data?.data || [];
+  const filtered = filter === "TUTTI" ? items :
+    filter === "ALERT" ? items.filter((d: any) => d.alert) :
+    filter === "STRATEGIA" ? items.filter((d: any) => d.isStrategy) :
+    filter === "ITALIA" ? items.filter((d: any) => d.ticker.includes(".MI")) :
+    filter === "USA" ? items.filter((d: any) => !d.ticker.includes(".MI") && !d.ticker.includes("-USD") && !d.ticker.includes("=")) :
+    filter === "CRYPTO" ? items.filter((d: any) => d.ticker.includes("-USD")) :
+    items;
+
+  return (
+    <div className="space-y-4">
+      {/* Header */}
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <div>
+          <h2 className="text-xl font-black" style={{ color: "var(--accent)" }}>Live Monitor</h2>
+          <p className="text-xs" style={{ color: "#94a3b8" }}>
+            Prezzi in tempo reale vs previsioni — {data?.marketOpen ? "Mercati aperti" : "Mercati chiusi"}
+            {lastUpdate && ` — Ultimo aggiornamento: ${lastUpdate}`}
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <button onClick={load} className="px-3 py-1.5 rounded-lg text-xs font-bold hover:brightness-110" style={{ background: "var(--accent)", color: "#08091a" }}>
+            Aggiorna
+          </button>
+          <button
+            onClick={() => setAutoRefresh(!autoRefresh)}
+            className="px-3 py-1.5 rounded-lg text-xs font-bold"
+            style={{
+              background: autoRefresh ? "rgba(34,197,94,0.2)" : "var(--surface-light)",
+              color: autoRefresh ? "#22c55e" : "#94a3b8",
+              border: `1px solid ${autoRefresh ? "#22c55e" : "var(--border)"}`,
+            }}
+          >
+            Auto {autoRefresh ? "ON" : "OFF"} (60s)
+          </button>
+        </div>
+      </div>
+
+      {/* Filtri */}
+      <div className="flex gap-2 flex-wrap">
+        {["TUTTI", "ALERT", "STRATEGIA", "ITALIA", "USA", "CRYPTO"].map(f => (
+          <button
+            key={f}
+            onClick={() => setFilter(f)}
+            className="px-3 py-1 rounded-lg text-xs font-bold transition-all"
+            style={{
+              background: filter === f ? "var(--accent)" : "var(--surface-light)",
+              color: filter === f ? "#08091a" : "#94a3b8",
+              border: `1px solid ${filter === f ? "var(--accent)" : "var(--border)"}`,
+            }}
+          >
+            {f} {f === "ALERT" && items.filter((d: any) => d.alert).length > 0 ? `(${items.filter((d: any) => d.alert).length})` : ""}
+          </button>
+        ))}
+      </div>
+
+      {loading && <LoadingSpinner text="Caricamento prezzi live..." />}
+
+      {!loading && filtered.length > 0 && (
+        <div className="rounded-xl overflow-x-auto" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
+          <table className="w-full text-sm">
+            <thead>
+              <tr style={{ background: "var(--surface-light)" }}>
+                <th className="px-3 py-2.5 text-left text-xs font-bold" style={{ color: "#94a3b8" }}>Asset</th>
+                <th className="px-3 py-2.5 text-left text-xs font-bold" style={{ color: "#94a3b8" }}>Prezzo</th>
+                <th className="px-3 py-2.5 text-left text-xs font-bold" style={{ color: "#94a3b8" }}>Oggi</th>
+                <th className="px-3 py-2.5 text-left text-xs font-bold" style={{ color: "#94a3b8" }}>Stato</th>
+                <th className="px-3 py-2.5 text-left text-xs font-bold" style={{ color: "#94a3b8" }}>vs Previsione</th>
+                <th className="px-3 py-2.5 text-left text-xs font-bold" style={{ color: "#94a3b8" }}>vs Strategia</th>
+                <th className="px-3 py-2.5 text-left text-xs font-bold" style={{ color: "#94a3b8" }}>Target</th>
+                <th className="px-3 py-2.5 text-left text-xs font-bold" style={{ color: "#94a3b8" }}>Vol.</th>
+                <th className="px-3 py-2.5 text-left text-xs font-bold hidden md:table-cell" style={{ color: "#94a3b8" }}>Alert</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map((d: any) => (
+                <tr key={d.ticker} style={{
+                  borderBottom: "1px solid var(--border)",
+                  background: d.alert ? "rgba(239,68,68,0.05)" : "transparent",
+                }}>
+                  <td className="px-3 py-2.5">
+                    <div className="font-bold text-sm">{d.ticker}</div>
+                    <div className="text-xs" style={{ color: "#64748b" }}>{d.name}</div>
+                  </td>
+                  <td className="px-3 py-2.5 font-bold">${d.price}</td>
+                  <td className="px-3 py-2.5 font-bold" style={{ color: d.changePct >= 0 ? "#22c55e" : "#ef4444" }}>
+                    {d.changePct >= 0 ? "+" : ""}{d.changePct}%
+                  </td>
+                  <td className="px-3 py-2.5">
+                    <span className="px-2 py-0.5 rounded text-xs font-bold" style={{
+                      background: d.liveStatus.includes("SALITA") || d.liveStatus.includes("RIALZO") ? "rgba(34,197,94,0.15)" :
+                        d.liveStatus.includes("DISCESA") || d.liveStatus.includes("RIBASSO") ? "rgba(239,68,68,0.15)" : "rgba(91,138,245,0.1)",
+                      color: d.liveStatus.includes("SALITA") || d.liveStatus.includes("RIALZO") ? "#22c55e" :
+                        d.liveStatus.includes("DISCESA") || d.liveStatus.includes("RIBASSO") ? "#ef4444" : "#5b8af5",
+                    }}>
+                      {d.liveStatus}
+                    </span>
+                  </td>
+                  <td className="px-3 py-2.5 text-xs">
+                    {d.predPrice > 0 ? (
+                      <div>
+                        <span className="font-bold" style={{ color: d.vsPredizioneePct >= 0 ? "#22c55e" : "#ef4444" }}>
+                          {d.vsPredizioneePct >= 0 ? "+" : ""}{d.vsPredizioneePct}%
+                        </span>
+                        <div style={{ color: "#475569" }}>da ${d.predPrice}</div>
+                      </div>
+                    ) : <span style={{ color: "#475569" }}>—</span>}
+                  </td>
+                  <td className="px-3 py-2.5 text-xs">
+                    {d.stratPrice > 0 ? (
+                      <div>
+                        <span className="font-bold" style={{ color: d.vsStrategiaPct >= 0 ? "#22c55e" : "#ef4444" }}>
+                          {d.vsStrategiaPct >= 0 ? "+" : ""}{d.vsStrategiaPct}%
+                        </span>
+                        <div style={{ color: "#475569" }}>{d.stratAction}</div>
+                      </div>
+                    ) : <span style={{ color: "#475569" }}>—</span>}
+                  </td>
+                  <td className="px-3 py-2.5 text-xs">
+                    {d.stratTarget > 0 ? (
+                      <div>
+                        <span style={{ color: "#22c55e" }}>${d.stratTarget}</span>
+                        <div style={{ color: "#ef4444" }}>SL: ${d.stratStop}</div>
+                      </div>
+                    ) : <span style={{ color: "#475569" }}>—</span>}
+                  </td>
+                  <td className="px-3 py-2.5">
+                    <span className={`text-xs font-bold ${d.volRatio >= 1.5 ? "" : ""}`} style={{
+                      color: d.volRatio >= 1.5 ? "var(--accent)" : "#475569"
+                    }}>
+                      {d.volRatio}x
+                    </span>
+                  </td>
+                  <td className="px-3 py-2.5 hidden md:table-cell">
+                    {d.alert ? (
+                      <span className="px-2 py-0.5 rounded text-xs font-bold" style={{
+                        background: d.alert.includes("STOP") ? "rgba(239,68,68,0.2)" :
+                          d.alert.includes("TARGET") ? "rgba(168,85,247,0.2)" :
+                          d.alert.includes("VOLUME") ? "rgba(91,138,245,0.2)" :
+                          d.alert.includes("RIALZO") ? "rgba(34,197,94,0.2)" : "rgba(239,68,68,0.2)",
+                        color: d.alert.includes("STOP") ? "#ef4444" :
+                          d.alert.includes("TARGET") ? "#a855f7" :
+                          d.alert.includes("VOLUME") ? "#5b8af5" :
+                          d.alert.includes("RIALZO") ? "#22c55e" : "#ef4444",
+                      }}>
+                        {d.alert}
+                      </span>
+                    ) : null}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {!loading && filtered.length === 0 && (
+        <Card>
+          <p className="text-center py-6" style={{ color: "#94a3b8" }}>
+            Nessun dato. Genera prima un&apos;analisi nel &quot;Il Mio Consulente&quot; per popolare il monitor.
+          </p>
+        </Card>
+      )}
     </div>
   );
 }
